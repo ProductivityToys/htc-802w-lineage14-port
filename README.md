@@ -57,7 +57,9 @@ python3 scripts/build.py --toolchain ../arm-linux-androideabi-4.9 --output ../bu
 SHA-256 清单。使用 `m7cdug_test44_defconfig`，内核和 WLAN 模块必须同次
 构建。新二进制仍需独立实机验证，不能沿用原 test44 镜像的验收结论。
 
-构建验证记录见 [build-verification.json](docs/build-verification.json)。
+合并仓库已完成干净构建，配置 SHA 与成功 test44 一致，内核/WLAN 模块版本匹配。
+见 [构建验证记录](docs/build-verification.json)。记录对应构建提交；后续仅说明更新
+也会改变项目版本号，因此不能要求重建结果具有相同二进制 SHA。
 
 ## Android 集成与刷机
 

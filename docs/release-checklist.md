@@ -1,6 +1,6 @@
 # Developer preview release checklist
 
-This file is a local preparation checklist, not a published release notice.
+Source preview checklist for the merged public project. Binary ROM work remains below.
 
 ## Source preview
 
@@ -12,7 +12,7 @@ This file is a local preparation checklist, not a published release notice.
 - [x] Verify source archive content and hashes; keep build outputs outside Git.
 - [x] Keep original upstream runtime CFG/INI; exclude untraced experimental replacements.
 - [x] Use zee / GitHub noreply attribution in ProductivityToys/htc-802w-lineage14-port.
-- [ ] Add real public repository URLs and publish corresponding source tags.
+- [x] Public repository URL fixed; release tag v0.1.0-source is prepared for publication.
 
 ## Binary preview
 

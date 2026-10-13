@@ -50,7 +50,7 @@ adjustment. This kernel alone does not turn an arbitrary M7 ROM into an 802w ROM
 
 ## Release state
 
-This is a local source snapshot prepared for publication, not an official
+This is a community source preview, not an official
 LineageOS release. The tested binary was built before this snapshot commit;
 freshly built binaries still need device validation. Camera error cleanup paths
 inherited from the reference board need review before a broader binary release.

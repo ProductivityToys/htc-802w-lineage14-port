@@ -17,7 +17,7 @@ Android 7.1.1 system. It is unofficial and intended for developers and testers.
 - Clean-build script for kernel, matching Prima WLAN module and WCNSS bootstrap.
 - Boot repacking tool and Android integration/release checklist.
 
-Source archives and SHA256SUMS identify the local preparation snapshots. The public project is https://github.com/ProductivityToys/htc-802w-lineage14-port;
+The source archive, SHA256SUMS and source-manifest.json identify the release snapshot. The public project is https://github.com/ProductivityToys/htc-802w-lineage14-port;
 source previews and future validated ROM downloads share its Releases page.
 
 ## Limitations
