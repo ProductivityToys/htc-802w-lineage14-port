@@ -1,4 +1,9 @@
-# HTC 802w Android 7.1 — source preview
+# HTC 802w Android 7.1 — source preview (historical record)
+
+The standalone v0.1.0-source Release was removed on 2026-10-13 after the
+installable ROM preview became available. Its Git tag and this correction
+record remain for reference. Use the [ROM download page](https://github.com/ProductivityToys/htc-802w-lineage14-port/releases/tag/v0.2.0-rom-preview)
+for current downloads.
 
 This release shares the kernel port and build tools behind the tested HTC 802w
 Android 7.1.1 system. It is unofficial and intended for developers and testers.

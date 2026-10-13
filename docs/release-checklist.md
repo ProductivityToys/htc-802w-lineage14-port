@@ -12,7 +12,7 @@ Public project checklist. Remaining checks below define the limits of the develo
 - [x] Verify source archive content and hashes; keep build outputs outside Git.
 - [x] Keep reference runtime CFG/INI; use a separate zero-MAC installer template.
 - [x] Use zee / GitHub noreply attribution in ProductivityToys/htc-802w-lineage14-port.
-- [x] Public repository URL fixed; v0.1.0-source published with explicit Prima correction.
+- [x] Public repository URL fixed; v0.1.0-source historical tag retained with explicit Prima correction; redundant Release removed.
 
 ## Binary preview
 
