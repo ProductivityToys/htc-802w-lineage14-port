@@ -1,0 +1,27 @@
+{
+  "kernel": {
+    "url": "https://github.com/LineageOS/android_kernel_htc_msm8960",
+    "base_commit": "cb121ea9e86cd51e814cb50048fd64544e672bcc"
+  },
+  "board_reference": {
+    "url": "https://github.com/zcop/android_kernel_htc_m7c",
+    "commit": "67da107c62e9eabd2d9275b5cad7049262c35310"
+  },
+  "toolchain": {
+    "url": "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9",
+    "commit": "0390252b6bcc6217966ade31d07f8b12f6f78f89"
+  },
+  "configuration": "kernel/arch/arm/configs/m7cdug_test44_defconfig",
+  "tested_baseline": "test44: build #30, 2026-10-12; newly rebuilt binaries not yet device-tested",
+  "original_rom": {
+    "name": "lineage-14.1-20170121-UNOFFICIAL-m7.zip",
+    "full_android_source_manifest": "not established; binary redistribution pending review"
+  },
+  "distribution": "Source preview preparation; no ROM/firmware/HAL included",
+  "repository": {
+    "url": "https://github.com/ProductivityToys/htc-802w-lineage14-port",
+    "kernel_path": "kernel",
+    "source_revision": "Use the release tag or exact repository commit; see release source-manifest.json"
+  },
+  "runtime_configuration": "Upstream CFG/INI defaults retained; untraced experimental replacements excluded. Runtime configuration is not compiled into zImage or wlan.ko."
+}

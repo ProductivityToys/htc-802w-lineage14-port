@@ -1,0 +1,24 @@
+{
+  "kernel_commit": "9efd0e2f9ffa08236e49aa8ee506dce88e8ae2c4",
+  "kernel_dirty": false,
+  "toolchain_commit": "0390252b6bcc6217966ade31d07f8b12f6f78f89",
+  "kernel_release": "3.4.113-g9efd0e2f",
+  "docker_image": "htc-kernel-builder:18.04",
+  "docker_image_id": "sha256:134caa6346268317f497b1e381bae2b6036f8ee8ad586e492279f62503e84e4b",
+  "artifacts": {
+    "kernel/arch/arm/boot/zImage": "09c748e66a72ae7e0bb363025532198ef642bee19cf1e1442d62571d45860eb7",
+    "kernel/drivers/staging/prima/wlan.ko": "acf3cbd77dbe10f5995687bbd1ca3be625ec55567e435f53b84f7fb099b39562",
+    "kernel/.config": "021f5d1392f0b9352b5cdaed27e756d02bdb9e2704aa9765bc8022a52bb79eef",
+    "wcnss-init": "aae8339d9e372c8bae949ea358d8e70ccec4f0e1cb142cf848d728905cce271f"
+  },
+  "device_validation": "pending",
+  "vermagic": "3.4.113-g9efd0e2f SMP preempt ARMv7 ",
+  "vermagic_matches_kernel": true,
+  "verified_config_matches_test44": true,
+  "bootstrap": "ARM32 ELF EABI5 static",
+  "verification_phases": [
+    "clean out-of-tree build",
+    "Git index cache refresh and kernel/module relink"
+  ],
+  "build_script_sha256": "e682ab2aeae18eec46b5ca0c931ad7bb326b1795f7395f44a8fc00be4c849c6a"
+}
