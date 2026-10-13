@@ -1,0 +1,15 @@
+{
+  "clean_data_cache_install": true,
+  "final_zip_installed": true,
+  "boot_completed": true,
+  "wifi_association_DHCP_gateway": true,
+  "wifi_reconnect_after_reboot": true,
+  "SELinux": "Enforcing",
+  "camera_devices": 2,
+  "front_rear_JPEG_saved": true,
+  "module_source_version": "3.2.3.22",
+  "module_size_bytes": 2826488,
+  "private_firmware_NV_keys_bundled": false,
+  "ROM_SHA256": "5bbeef87d067666d1de6df6baddde7c8bf95b27a4c65b574841e3746cb9d3023",
+  "scope": "One HTC 802w; baseline after clean wipe plus final package reinstall; private network/auth files used only for testing"
+}

@@ -124,9 +124,7 @@ when        who    what, where, why
 #define WDI_WAPI_STA_MASK            0x8  //bit 3. If set, this frame is for WAPI station
 #endif
 
-#ifdef FEATURE_WLAN_UAPSD_FW_TRG_FRAMES
 #define WDI_TRIGGER_ENABLED_AC_MASK         0x10 //bit 4 for data frames belonging to trigger enabled AC
-#endif
 #define WDI_USE_NO_ACK_REQUESTED_MASK       0x20
 
 #define WDI_USE_BD_RATE2_FOR_MANAGEMENT_FRAME 0x40 // Bit 6 will be used to control BD rate for Management frames
@@ -301,6 +299,11 @@ when        who    what, where, why
 #define WDI_RX_FC_BD_GET_FC( _pvBDHeader )     (((WDI_FcRxBdType*)_pvBDHeader)->fc)
 #define WDI_RX_FC_BD_GET_STA_VALID_MASK( _pvBDHeader )     (((WDI_FcRxBdType*)_pvBDHeader)->fcSTAValidMask)
 
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+//LFR scan related
+#define WDI_RX_BD_GET_OFFLOADSCANLEARN( _pvBDHeader )         (((WDI_RxBdType*)_pvBDHeader)->offloadScanLearn)
+#define WDI_RX_BD_GET_ROAMCANDIDATEIND( _pvBDHeader )         (((WDI_RxBdType*)_pvBDHeader)->roamCandidateInd)
+#endif
 
 /*------------ RSSI and SNR Information extraction -------------*/
 #define WDI_RX_BD_GET_RSSI0( _pvBDHeader )  \

@@ -44,6 +44,19 @@
 
 #define TDLS_RSSI_TRIGGER_HYSTERESIS 50
 
+/* before UpdateTimer expires, we want to timeout discovery response.
+should not be more than 2000 */
+#define TDLS_DISCOVERY_TIMEOUT_BEFORE_UPDATE     1000
+
+#define TDLS_CTX_MAGIC 0x54444c53    // "TDLS"
+
+#define TDLS_MAX_SCAN_SCHEDULE          10
+#define TDLS_MAX_SCAN_REJECT            5
+#define TDLS_DELAY_SCAN_PER_CONNECTION 100
+
+#define TDLS_IS_CONNECTED(peer)  \
+        ((eTDLS_LINK_CONNECTED == (peer)->link_status) || \
+         (eTDLS_LINK_TEARING == (peer)->link_status))
 typedef struct
 {
     tANI_U32    tdls;
@@ -58,22 +71,40 @@ typedef struct
     tANI_S32    rssi_teardown_threshold;
 } tdls_config_params_t;
 
-typedef enum {
-    eTDLS_SUPPORT_DISABLED = 0,
-    eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY,
-    eTDLS_SUPPORT_ENABLED,
-} eTDLSSupportMode;
+typedef struct
+{
+    struct wiphy *wiphy;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+    struct net_device *dev;
+#endif
+    struct cfg80211_scan_request *scan_request;
+    int magic;
+    int attempt;
+    int reject;
+    struct delayed_work tdls_scan_work;
+} tdls_scan_context_t;
 
 typedef enum {
+    eTDLS_SUPPORT_NOT_ENABLED = 0,
+    eTDLS_SUPPORT_DISABLED, /* suppress implicit trigger and not respond to the peer */
+    eTDLS_SUPPORT_EXPLICIT_TRIGGER_ONLY, /* suppress implicit trigger, but respond to the peer */
+    eTDLS_SUPPORT_ENABLED, /* implicit trigger */
+} eTDLSSupportMode;
+
+typedef enum eTDLSCapType{
     eTDLS_CAP_NOT_SUPPORTED = -1,
     eTDLS_CAP_UNKNOWN = 0,
     eTDLS_CAP_SUPPORTED = 1,
-} eTDLSCapType;
+} tTDLSCapType;
 
-typedef enum {
-    eTDLS_LINK_NOT_CONNECTED = 0,
-    eTDLS_LINK_CONNECTED = 1,
-} eTDLSLinkStatus;
+typedef enum eTDLSLinkStatus {
+    eTDLS_LINK_IDLE = 0,
+    eTDLS_LINK_DISCOVERING,
+    eTDLS_LINK_DISCOVERED,
+    eTDLS_LINK_CONNECTING,
+    eTDLS_LINK_CONNECTED,
+    eTDLS_LINK_TEARING,
+} tTDLSLinkStatus;
 
 typedef struct {
     tANI_U16    period;
@@ -93,13 +124,39 @@ typedef struct {
     tANI_U16    rssi_thres;
 } tdls_rssi_config_t;
 
+struct _hddTdlsPeer_t;
+
 typedef struct {
+    tSirMacAddr macAddr;
+} hddTdlsForcePeer_t;
+
+typedef struct {
+    struct list_head peer_list[256];
+    hdd_adapter_t   *pAdapter;
+#ifdef TDLS_USE_SEPARATE_DISCOVERY_TIMER
+    vos_timer_t     peerDiscoverTimer;
+#endif
+    vos_timer_t     peerUpdateTimer;
+    vos_timer_t     peerDiscoveryTimeoutTimer;
+    tdls_config_params_t threshold_config;
+    tANI_S32        discovery_peer_cnt;
+    tANI_U32        discovery_sent_cnt;
+    tANI_S8         ap_rssi;
+    struct _hddTdlsPeer_t  *curr_candidate;
+    struct work_struct implicit_setup;
+    v_U32_t            magic;
+    hddTdlsForcePeer_t forcePeer[HDD_MAX_NUM_TDLS_STA];
+    tANI_U8            forcePeerCnt;
+} tdlsCtx_t;
+
+typedef struct _hddTdlsPeer_t {
     struct list_head node;
+    tdlsCtx_t   *pHddTdlsCtx;
     tSirMacAddr peerMac;
     tANI_U16    staId ;
     tANI_S8     rssi;
-    tANI_S8     tdls_support;
-    tANI_S8     link_status;
+    tTDLSCapType     tdls_support;
+    tTDLSLinkStatus  link_status;
     tANI_U8     signature;
     tANI_U8     is_responder;
     tANI_U8     discovery_processed;
@@ -107,63 +164,111 @@ typedef struct {
     tANI_U16    tx_pkt;
     tANI_U16    rx_pkt;
     vos_timer_t     peerIdleTimer;
+    vos_timer_t     initiatorWaitTimeoutTimer;
 } hddTdlsPeer_t;
 
-
 typedef struct {
-    struct list_head peer_list[256];
-    struct mutex lock;
-    struct net_device *dev;
-    vos_timer_t     peerDiscoverTimer;
-    vos_timer_t     peerUpdateTimer;
-    tdls_config_params_t threshold_config;
-    tANI_S32        discovery_peer_cnt;
-    tANI_S8         ap_rssi;
-} tdlsCtx_t;
+    /* Session ID */
+    tANI_U8 sessionId;
+    /*TDLS peer station id */
+    v_U8_t staId;
+    /* TDLS peer mac Address */
+    v_MACADDR_t peerMac;
+} tdlsConnInfo_t;
 
-int wlan_hdd_tdls_init(struct net_device *dev);
+int wlan_hdd_tdls_init(hdd_adapter_t *pAdapter);
 
-void wlan_hdd_tdls_exit(void);
-
-void wlan_hdd_tdls_timers_stop(void);
-
-void wlan_hdd_tdls_timers_destroy(void);
+void wlan_hdd_tdls_exit(hdd_adapter_t *pAdapter);
 
 void wlan_hdd_tdls_extract_da(struct sk_buff *skb, u8 *mac);
 
 void wlan_hdd_tdls_extract_sa(struct sk_buff *skb, u8 *mac);
 
-int wlan_hdd_tdls_increment_pkt_count(u8 *mac, u8 tx);
+int wlan_hdd_tdls_increment_pkt_count(hdd_adapter_t *pAdapter, u8 *mac, u8 tx);
 
-int wlan_hdd_tdls_set_sta_id(u8 *mac, u8 staId);
+int wlan_hdd_tdls_set_sta_id(hdd_adapter_t *pAdapter, u8 *mac, u8 staId);
 
-hddTdlsPeer_t *wlan_hdd_tdls_find_peer(u8 *mac);
+hddTdlsPeer_t *wlan_hdd_tdls_find_peer(hdd_adapter_t *pAdapter, u8 *mac);
 
-hddTdlsPeer_t *wlan_hdd_tdls_get_peer(u8 *mac);
+hddTdlsPeer_t *wlan_hdd_tdls_find_all_peer(hdd_context_t *pHddCtx, u8 *mac);
 
-void wlan_hdd_tdls_set_link_status(hddTdlsPeer_t *curr_peer, int status);
+hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter, u8 *mac);
 
-int wlan_hdd_tdls_set_cap(u8 *mac, int cap);
+int wlan_hdd_tdls_set_cap(hdd_adapter_t *pAdapter, u8* mac, tTDLSCapType cap);
 
-int wlan_hdd_tdls_set_rssi(u8 *mac, tANI_S8 rxRssi);
+void wlan_hdd_tdls_set_peer_link_status(hddTdlsPeer_t *curr_peer, tTDLSLinkStatus status);
 
-int wlan_hdd_tdls_set_responder(u8 *mac, tANI_U8 responder);
+void wlan_hdd_tdls_set_link_status(hdd_adapter_t *pAdapter, u8* mac, tTDLSLinkStatus status);
 
-int wlan_hdd_tdls_get_responder(u8 *mac);
+int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac);
 
-int wlan_hdd_tdls_set_signature(u8 *mac, tANI_U8 uSignature);
+int wlan_hdd_tdls_set_rssi(hdd_adapter_t *pAdapter, u8 *mac, tANI_S8 rxRssi);
+
+int wlan_hdd_tdls_set_responder(hdd_adapter_t *pAdapter, u8 *mac, tANI_U8 responder);
+
+int wlan_hdd_tdls_get_responder(hdd_adapter_t *pAdapter, u8 *mac);
+
+int wlan_hdd_tdls_set_signature(hdd_adapter_t *pAdapter, u8 *mac, tANI_U8 uSignature);
 
 int wlan_hdd_tdls_set_params(struct net_device *dev, tdls_config_params_t *config);
 
-int wlan_hdd_tdls_reset_peer(u8 *mac);
+int wlan_hdd_tdls_reset_peer(hdd_adapter_t *pAdapter, u8 *mac);
 
-u8 wlan_hdd_tdlsConnectedPeers(void);
+tANI_U16 wlan_hdd_tdlsConnectedPeers(hdd_adapter_t *pAdapter);
 
-int wlan_hdd_tdls_get_all_peers(char *buf, int buflen);
+int wlan_hdd_tdls_get_all_peers(hdd_adapter_t *pAdapter, char *buf, int buflen);
 
 void wlan_hdd_tdls_connection_callback(hdd_adapter_t *pAdapter);
 
 void wlan_hdd_tdls_disconnection_callback(hdd_adapter_t *pAdapter);
 
+void wlan_hdd_tdls_mgmt_completion_callback(hdd_adapter_t *pAdapter, tANI_U32 statusCode);
+
+void wlan_hdd_tdls_increment_peer_count(hdd_adapter_t *pAdapter);
+
+void wlan_hdd_tdls_decrement_peer_count(hdd_adapter_t *pAdapter);
+
+void wlan_hdd_tdls_check_bmps(hdd_adapter_t *pAdapter);
+
+u8 wlan_hdd_tdls_is_peer_progress(hdd_adapter_t *pAdapter, u8 *mac);
+
+hddTdlsPeer_t *wlan_hdd_tdls_is_progress(hdd_context_t *pHddCtx, u8* mac, u8 skip_self, tANI_BOOLEAN mutexLock);
+
+void wlan_hdd_tdls_set_mode(hdd_context_t *pHddCtx,
+                            eTDLSSupportMode tdls_mode,
+                            v_BOOL_t bUpdateLast);
+
+tANI_U32 wlan_hdd_tdls_discovery_sent_cnt(hdd_context_t *pHddCtx);
+
+void wlan_hdd_tdls_check_power_save_prohibited(hdd_adapter_t *pAdapter);
+
+void wlan_hdd_tdls_free_scan_request (tdls_scan_context_t *tdls_scan_ctx);
+
+int wlan_hdd_tdls_copy_scan_context(hdd_context_t *pHddCtx,
+                            struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                            struct net_device *dev,
+#endif
+                            struct cfg80211_scan_request *request);
+
+int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
+                                struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                                struct net_device *dev,
+#endif
+                                struct cfg80211_scan_request *request);
+
+void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter);
+
+void wlan_hdd_tdls_timer_restart(hdd_adapter_t *pAdapter,
+                                 vos_timer_t *timer,
+                                 v_U32_t expirationTime);
+void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
+                                           hddTdlsPeer_t *curr_peer,
+                                           tANI_U16 reason);
+
+int wlan_hdd_tdls_add_force_peer(hdd_adapter_t *pAdapter, u8 *mac);
+
+int wlan_hdd_tdls_remove_force_peer(hdd_adapter_t *pAdapter, u8 *mac);
 
 #endif // __HDD_TDSL_H

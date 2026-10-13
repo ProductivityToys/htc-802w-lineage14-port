@@ -12,16 +12,28 @@
     "commit": "0390252b6bcc6217966ade31d07f8b12f6f78f89"
   },
   "configuration": "kernel/arch/arm/configs/m7cdug_test44_defconfig",
-  "tested_baseline": "test44: build #30, 2026-10-12; newly rebuilt binaries not yet device-tested",
+  "tested_baseline": "test44 build #30; ROM preview also validates rebuilt ga7e2dd21 kernel with corrected Prima 3.2.3.22 module",
   "original_rom": {
     "name": "lineage-14.1-20170121-UNOFFICIAL-m7.zip",
-    "full_android_source_manifest": "not established; binary redistribution pending review"
+    "full_android_source_manifest": "not established; adapted declared public binary base, notices preserved",
+    "publisher": "Flyhalf205",
+    "url": "https://androidfilehost.com/?fid=673368273298925517",
+    "filename": "lineage-14.1-20170121-UNOFFICIAL-m7.zip",
+    "md5": "db369f61f537f04d8dd4d6c5fc6cf7f4"
   },
-  "distribution": "Source preview preparation; no ROM/firmware/HAL included",
+  "distribution": "Git source and adapted ROM developer preview in Releases; own WCNSS firmware/NV excluded",
   "repository": {
     "url": "https://github.com/ProductivityToys/htc-802w-lineage14-port",
     "kernel_path": "kernel",
     "source_revision": "Use the release tag or exact repository commit; see release source-manifest.json"
   },
-  "runtime_configuration": "Upstream CFG/INI defaults retained; untraced experimental replacements excluded. Runtime configuration is not compiled into zImage or wlan.ko."
+  "runtime_configuration": "Reference Prima defaults in kernel; tested common CFG and zero-address INI in config/rom; installer supplies receiving-device identity",
+  "prima": {
+    "repository": "https://github.com/zcop/android_kernel_htc_m7c",
+    "commit": "67da107c62e9eabd2d9275b5cad7049262c35310",
+    "path": "drivers/staging/prima",
+    "version": "3.2.3.22",
+    "local_patch": "Kbuild -fno-pic -fno-pie; strip-debug after module build"
+  },
+  "source_preview_correction": "v0.1.0-source contained earlier Prima 3.2.0.71 experimental code, not the successful module source; follow-up fixes the complete actual driver."
 }

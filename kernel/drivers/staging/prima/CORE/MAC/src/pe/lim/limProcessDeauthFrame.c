@@ -103,8 +103,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
 
     if ((eLIM_STA_ROLE == psessionEntry->limSystemRole) && (eLIM_SME_WT_DEAUTH_STATE == psessionEntry->limSmeState))
     {
-       PELOGE(limLog(pMac, LOGE,
-        FL("received Deauth frame in DEAUTH_WT_STATE(already processing previously received DEAUTH frame).. Dropping this..\n "));)
+       MTRACE(macTrace(pMac, TRACE_CODE_INFO_LOG, 0, eLOG_PROC_DEAUTH_FRAME_SCENARIO));
        return;
     }
 
@@ -113,7 +112,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
         // Received Deauth frame from a BC/MC address
         // Log error and ignore it
         PELOG1(limLog(pMac, LOG1,
-               FL("received Deauth frame from a BC/MC address\n"));)
+               FL("received Deauth frame from a BC/MC address"));)
 
         return;
     }
@@ -123,7 +122,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
         // Received Deauth frame for a MC address
         // Log error and ignore it
         PELOG1(limLog(pMac, LOG1,
-               FL("received Deauth frame for a MC address\n"));)
+               FL("received Deauth frame for a MC address"));)
 
         return;
     }
@@ -137,8 +136,8 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
       
     if (limCheckDisassocDeauthAckPending(pMac, (tANI_U8*)pHdr->sa))
     {
-        PELOGW(limLog(pMac, LOGE, 
-                    FL("Ignore the Deauth received, while waiting for ack of disassoc/deauth\n"));)
+        PELOGW(limLog(pMac, LOGW,
+                    FL("Ignore the Deauth received, while waiting for ack of disassoc/deauth"));)
         limCleanUpDisassocDeauthReq(pMac,(tANI_U8*)pHdr->sa, 1);
         return;
     }
@@ -157,7 +156,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
                 // Invalid reasonCode in received Deauthentication frame
                 // Log error and ignore the frame
                 PELOG1(limLog(pMac, LOG1,
-                   FL("received Deauth frame with invalid reasonCode %d from \n"),
+                   FL("received Deauth frame with invalid reasonCode %d from "),
                    reasonCode);
                 limPrintMacAddr(pMac, pHdr->sa, LOG1);)
 
@@ -181,7 +180,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
                 // Invalid reasonCode in received Deauth frame
                 // Log error and ignore the frame
                 PELOG1(limLog(pMac, LOG1,
-                   FL("received Deauth frame with invalid reasonCode %d from \n"),
+                   FL("received Deauth frame with invalid reasonCode %d from "),
                    reasonCode);
                 limPrintMacAddr(pMac, pHdr->sa, LOG1);)
 
@@ -191,11 +190,11 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     else
     {
         // Received Deauth frame in either IBSS
-        // or un-known role. Log error and ignore it
-        limLog(pMac, LOGE,
-           FL("received Deauth frame with reasonCode %d in role %d from \n"),
+        // or un-known role. Log and ignore it
+        limLog(pMac, LOG1,
+           FL("received Deauth frame with reasonCode %d in role %d from "),
            reasonCode, psessionEntry->limSystemRole);
-          limPrintMacAddr(pMac, pHdr->sa, LOGE);
+          limPrintMacAddr(pMac, pHdr->sa, LOG1);
 
         return;
     }
@@ -224,7 +223,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     }
     if (limIsReassocInProgress(pMac,psessionEntry) || limIsReassocInProgress(pMac,pRoamSessionEntry)) {
         if (!IS_REASSOC_BSSID(pMac,pHdr->sa,psessionEntry)) {
-            PELOGE(limLog(pMac, LOGE, FL("Rcv Deauth from unknown/different AP while ReAssoc. Ignore \n"));)
+            PELOGE(limLog(pMac, LOGE, FL("Rcv Deauth from unknown/different AP while ReAssoc. Ignore "));)
             limPrintMacAddr(pMac, pHdr->sa, LOGE);
             limPrintMacAddr(pMac, psessionEntry->limReAssocbssId, LOGE);
             return;
@@ -234,7 +233,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
          *  Drop ReAssoc and Restore the Previous context( current connected AP).
          */
         if (!IS_CURRENT_BSSID(pMac, pHdr->sa,psessionEntry)) {
-            PELOGE(limLog(pMac, LOGE, FL("received DeAuth from the New AP to which ReAssoc is sent \n"));)
+            PELOGE(limLog(pMac, LOGE, FL("received DeAuth from the New AP to which ReAssoc is sent "));)
             limPrintMacAddr(pMac, pHdr->sa, LOGE);
             limPrintMacAddr(pMac, psessionEntry->bssId, LOGE);
             limRestorePreReassocState(pMac,
@@ -247,22 +246,18 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     /* If received DeAuth from AP other than the one we're trying to join with
      * nor associated with, then ignore deauth and delete Pre-auth entry.
      */
-#ifdef WLAN_SOFTAP_FEATURE
     if(psessionEntry->limSystemRole != eLIM_AP_ROLE ){
-#endif
         if (!IS_CURRENT_BSSID(pMac, pHdr->bssId, psessionEntry))
         {
-            PELOGE(limLog(pMac, LOGE, FL("received DeAuth from an AP other than we're trying to join. Ignore. \n"));)
+            PELOGE(limLog(pMac, LOGE, FL("received DeAuth from an AP other than we're trying to join. Ignore. "));)
             if (limSearchPreAuthList(pMac, pHdr->sa))
             {
-                PELOGE(limLog(pMac, LOGE, FL("Preauth entry exist. Deleting... \n"));)
+                PELOG1(limLog(pMac, LOG1, FL("Preauth entry exist. Deleting... "));)
                 limDeletePreAuthNode(pMac, pHdr->sa);
             }
             return;
         }
-#ifdef WLAN_SOFTAP_FEATURE
     }
-#endif
 
         pStaDs = dphLookupHashEntry(pMac, pHdr->sa, &aid, &psessionEntry->dph.dphHashTable);
 
@@ -396,44 +391,11 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
             case eLIM_STA_IN_IBSS_ROLE:
                 break;
 
-#ifdef WLAN_SOFTAP_FEATURE
             case eLIM_AP_ROLE:
                 break;
-#endif 
 
             default: // eLIM_AP_ROLE or eLIM_BT_AMP_AP_ROLE
 
-#if (WNI_POLARIS_FW_PRODUCT == AP)
-                /// Check if there exists pre-auth context for this STA
-                if (limSearchPreAuthList(pMac, pHdr->sa) == NULL)
-                {
-                    /**
-                     * Received Deauthentication from a STA that is neither
-                     * Associated nor Pre-authenticated. Log error,
-                     * and ignore Deauthentication frame.
-                     */
-                    PELOG1(limLog(pMac, LOG1,
-                       FL("received Deauth frame from peer that does not have context, addr "));
-                    limPrintMacAddr(pMac, pHdr->sa, LOG1);)
-                }
-                else
-                {
-                    /// Delete STA from pre-auth STA list
-                    limDeletePreAuthNode(pMac,
-                                         pHdr->sa);
-
-                    palCopyMemory( pMac->hHdd,
-                           (tANI_U8 *) &mlmDeauthInd.peerMacAddr,
-                           pHdr->sa,
-                           sizeof(tSirMacAddr));
-                    mlmDeauthInd.reasonCode = reasonCode;
-                    mlmDeauthInd.aid        = 0;
-
-                    limPostSmeMessage(pMac,
-                                      LIM_MLM_DEAUTH_IND,
-                                      (tANI_U32 *) &mlmDeauthInd);
-                }
-#endif
 
                 return;
         } // end switch (pMac->lim.gLimSystemRole)
@@ -468,9 +430,6 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     palCopyMemory( pMac->hHdd, (tANI_U8 *) &mlmDeauthInd.peerMacAddr,
                   pStaDs->staAddr,
                   sizeof(tSirMacAddr));
-#if (WNI_POLARIS_FW_PRODUCT == AP)
-    mlmDeauthInd.aid           = pStaDs->assocId;
-#endif
     mlmDeauthInd.reasonCode    = (tANI_U8) pStaDs->mlmStaContext.disassocReason;
     mlmDeauthInd.deauthTrigger = eLIM_PEER_ENTITY_DEAUTH;
 
@@ -495,7 +454,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
             psessionEntry->limAssocResponseData = NULL;                            
         }
 
-        PELOGE(limLog(pMac, LOGE, FL("Rcv Deauth from ReAssoc AP. Issue REASSOC_CNF. \n"));)
+        PELOGE(limLog(pMac, LOGE, FL("Rcv Deauth from ReAssoc AP. Issue REASSOC_CNF. "));)
        /*
         * TODO: Instead of overloading eSIR_SME_FT_REASSOC_TIMEOUT_FAILURE
         * it would have been good to define/use a different failure type.

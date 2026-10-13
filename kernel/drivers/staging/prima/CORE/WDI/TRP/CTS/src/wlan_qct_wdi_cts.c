@@ -303,10 +303,6 @@ WCTS_PALReadCallback
       bytes_read = smd_read(pWCTSCb->wctsChannel,
                             buffer,
                             packet_size);
-      if (bytes_read >= 2 && ((unsigned char *)buffer)[0] != 0x38)
-         pr_err("m7c WCTS response: len=%d type=%02x%02x\n",
-                bytes_read, ((unsigned char *)buffer)[1],
-                ((unsigned char *)buffer)[0]);
 
       if (bytes_read != packet_size) {
          /*Some problem, do not forward it to WDI.*/
@@ -954,10 +950,6 @@ WCTS_SendMessage
       if (available >= len) {
          written = smd_write(pWCTSCb->wctsChannel, pMsg, len);
       }
-      if (len >= 2 && ((unsigned char *)pMsg)[0] == 0 &&
-          ((unsigned char *)pMsg)[1] == 0)
-         pr_err("m7c START SMD: len=%d avail=%d written=%d\n",
-                len, available, written);
    } else if (WCTS_STATE_DEFERRED == pWCTSCb->wctsState) {
       WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
                  "WCTS_SendMessage: FIFO space not available, the packets will be queued");

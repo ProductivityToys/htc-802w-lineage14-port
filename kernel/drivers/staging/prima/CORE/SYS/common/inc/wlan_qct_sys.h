@@ -103,6 +103,7 @@ typedef enum
    SYS_MSG_ID_RX_TIMER,
 
    SYS_MSG_ID_MC_STOP,
+   SYS_MSG_ID_FTM_RSP,
 
 } SYS_MSG_ID;
 
@@ -354,7 +355,6 @@ VOS_STATUS sysMcProcessMsg( v_CONTEXT_t pVosContext, vos_msg_t* pMsg );
   --------------------------------------------------------------------------*/
 VOS_STATUS sysTxProcessMsg( v_CONTEXT_t pVContext, vos_msg_t* pMsg );
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 /*----------------------------------------------------------------------------
 
   \brief sysTxProcessMsg() - process SYS messages on the Rx thread
@@ -386,7 +386,6 @@ VOS_STATUS sysTxProcessMsg( v_CONTEXT_t pVContext, vos_msg_t* pMsg );
 
   --------------------------------------------------------------------------*/
 VOS_STATUS sysRxProcessMsg( v_CONTEXT_t pVContext, vos_msg_t* pMsg );
-#endif
 
 /*----------------------------------------------------------------------------
 

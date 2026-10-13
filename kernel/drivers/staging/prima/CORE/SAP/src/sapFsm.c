@@ -513,7 +513,11 @@ sapSignalHDDevent
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
     /* Format the Start BSS Complete event to return... */
-    VOS_ASSERT(sapContext->pfnSapEventCallback);
+    if (NULL == sapContext->pfnSapEventCallback)
+    {
+        VOS_ASSERT(0);
+        return VOS_STATUS_E_FAILURE;
+    }
 
     switch (sapHddevent)
     {
@@ -661,7 +665,6 @@ sapSignalHDDevent
                           sizeof(tSirWPSPBCProbeReq));
             break;
 
-#ifdef WLAN_FEATURE_P2P
        case eSAP_INDICATE_MGMT_FRAME:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
                                  "In %s, SAP event callback event = %s",
@@ -707,7 +710,6 @@ sapSignalHDDevent
             sapApAppEvent.sapevt.sapActionCnf.actionSendSuccess = (eSapStatus)context;
             break;
 
-#endif
 
         case eSAP_UNKNOWN_STA_JOIN:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -1075,9 +1077,7 @@ sapconvertToCsrProfile(tsap_Config_t *pconfig_params, eCsrRoamBssType bssType, t
     //country code
     if (pconfig_params->countryCode[0])
         vos_mem_copy(profile->countryCode, pconfig_params->countryCode, WNI_CFG_COUNTRY_CODE_LEN);
-#ifdef WLAN_SOFTAP_FEATURE
     profile->ieee80211d = pconfig_params->ieee80211d;
-#endif
     //wps config info
     profile->wps_state = pconfig_params->wps_state;
 

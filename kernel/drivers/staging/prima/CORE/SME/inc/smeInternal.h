@@ -117,10 +117,8 @@ typedef enum eSmeCommandType
 #ifdef FEATURE_OEM_DATA_SUPPORT
     eSmeCommandOemDataReq = 0x80000, //To identify the oem data commands
 #endif
-#ifdef WLAN_FEATURE_P2P
     eSmeCommandRemainOnChannel,
     eSmeCommandNoAUpdate,
-#endif
 } eSmeCommandType;
 
 
@@ -157,6 +155,7 @@ typedef struct tagSmeStruct
     tDblLinkList smeCmdFreeList;   //preallocated roam cmd list
     void (*pTxPerHitCallback) (void *pCallbackContext); /* callback for Tx PER hit to HDD */ 
     void *pTxPerHitCbContext;
+    tVOS_CON_MODE currDeviceMode;
 } tSmeStruct, *tpSmeStruct;
 
 

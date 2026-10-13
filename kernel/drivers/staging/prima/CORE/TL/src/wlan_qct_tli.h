@@ -39,6 +39,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+
 #ifndef WLAN_QCT_TLI_H
 #define WLAN_QCT_TLI_H
 
@@ -52,8 +53,6 @@ DESCRIPTION
   This file contains the internal declarations used within wlan transport
   layer module.
 
-  Copyright (c) 2008 QUALCOMM Incorporated. All Rights Reserved.
-  Qualcomm Confidential and Proprietary
 ===========================================================================*/
 
 
@@ -111,19 +110,12 @@ when        who    what, where, why
 
 
 #define STATIC  static
-
 /*----------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
  * -------------------------------------------------------------------------*/
 
 /*Maximum number of TIDs */
 #define WLAN_MAX_TID                          8
-
-/** The define is moved to external header file to be used by HDD */
-#ifndef WLAN_SOFTAP_FEATURE
-/*Maximum number of supported stations */
-#define WLAN_MAX_STA_COUNT                    5
-#endif
 
 /*Offset of the OUI field inside the LLC/SNAP header*/
 #define WLANTL_LLC_OUI_OFFSET                 3
@@ -284,6 +276,9 @@ typedef enum
   /* Serialzie Finish UL Authentication request */
   WLANTL_FINISH_ULA   = 5,
 
+  /* Serialized Snapshot request indication */
+  WLANTL_TX_SNAPSHOT = 6,
+
   WLANTL_TX_MAX
 }WLANTL_TxSignalsType;
 
@@ -399,9 +394,7 @@ STATIC const WLANTL_STAFsmEntryType tlSTAFsm[WLANTL_STA_MAX_STATE] =
 typedef struct
 {
    v_BOOL_t     isAvailable;
-#ifdef ANI_CHIPSET_VOLANS
    v_U64_t      ullReplayCounter[WLANTL_MAX_WINSIZE];
-#endif
    v_PVOID_t    arrayBuffer[WLANTL_MAX_WINSIZE];
 } WLANTL_REORDER_BUFFER_T;
 
@@ -516,6 +509,9 @@ typedef struct
   /* Value of the averaged RSSI for this station in BMPS */
   v_S7_t                        rssiAvgBmps;
 
+  /* Value of the Alpha to calculate RSSI average */
+  v_S7_t                        rssiAlpha;
+
   /* Value of the averaged RSSI for this station */
   v_U32_t                       uLinkQualityAvg;
 
@@ -549,11 +545,11 @@ typedef struct
 
   /*Packet pending flag - set if tx is pending for the station*/
   v_U8_t                        ucPktPending;
-  
+
   /*EAPOL Packet pending flag - set if EAPOL packet is pending for the station*/
   v_U8_t                        ucEapolPktPending;
 
-  /*used on tx packet to signal when there is no more data to tx for the 
+  /*used on tx packet to signal when there is no more data to tx for the
    moment=> packets can be passed to BAL */
   v_U8_t                    ucNoMoreData;
 
@@ -578,7 +574,6 @@ typedef struct
   /*Begining of the cached packets chain*/
   vos_pkt_t*                 vosEndCachedFrame;
 
-#ifdef WLAN_SOFTAP_FEATURE
 
   /* LWM related fields */
 
@@ -626,9 +621,7 @@ typedef struct
 
   /* Queue to keep unicast station management frame */
   vos_list_t pStaManageQ;
-#endif
 
-#ifdef ANI_CHIPSET_VOLANS
  /* 1 means replay check is needed for the station,
   * 0 means replay check is not needed for the station*/
   v_BOOL_t      ucIsReplayCheckValid;
@@ -639,8 +632,13 @@ typedef struct
  /* It contains no of replay packets found per STA.
     It is for debugging purpose only.*/
   v_U32_t       ulTotalReplayPacketsDetected;
-#endif
 
+ /* Set when pairwise key is installed, if ptkInstalled is
+    1 then we have to encrypt the data irrespective of TL
+    state (CONNECTED/AUTHENTICATED) */
+  v_U8_t ptkInstalled;
+
+  v_U32_t       linkCapacity;
 }WLANTL_STAClientType;
 
 /*---------------------------------------------------------------------------
@@ -775,7 +773,6 @@ typedef struct
 
   v_BOOL_t                  bUrgent;
 
-#ifdef WLAN_SOFTAP_FEATURE
 
   /* resource flag */
   v_U32_t bd_pduResCount;
@@ -825,7 +822,6 @@ typedef struct
 
   v_U8_t done_once;
   v_U8_t uFramesProcThres;
-#endif
 #ifdef FEATURE_WLAN_TDLS
   /*number of total TDLS peers registered to TL
     Incremented at WLANTL_RegisterSTAClient(staType == WLAN_STA_TDLS)
@@ -859,7 +855,7 @@ typedef struct
     pAdapter:       pointer to the global adapter context; a handle to TL's
                     or BAL's control block can be extracted from its context
     uSize:          maximum size accepted by the lower layer
-    uFlowMask       TX flow control mask. Each bit is defined as 
+    uFlowMask       TX flow control mask. Each bit is defined as
                     WDA_TXFlowEnumType
 
     OUT
@@ -884,9 +880,7 @@ WLANTL_GetFrames
   v_PVOID_t       pAdapter,
   vos_pkt_t     **ppFrameDataBuff,
   v_U32_t         uSize,
-#if defined( FEATURE_WLAN_INTEGRATED_SOC )
   v_U8_t          uFlowMask,
-#endif
   v_BOOL_t*       pbUrgent
 );
 
@@ -1330,7 +1324,7 @@ WLANTL_Translate80211To8023Header
 (
   vos_pkt_t*      vosDataBuff,
   VOS_STATUS*     pvosStatus,
-  v_U16_t         usActualHLen,  
+  v_U16_t         usActualHLen,
   v_U8_t          ucHeaderLen,
   WLANTL_CbType*  pTLCb,
   v_U8_t          ucSTAId
@@ -1633,9 +1627,8 @@ void WLANTL_PowerStateChangedCB
    tPmcState newState
 );
 
-#ifdef WLAN_SOFTAP_FEATURE
 /*==========================================================================
-  FUNCTION   WLANTL_FwdPktToHDD 
+  FUNCTION   WLANTL_FwdPktToHDD
 
   DESCRIPTION
     Determine the Destation Station ID and route the Frame to Upper Layer
@@ -1670,5 +1663,4 @@ WLANTL_FwdPktToHDD
   v_U8_t          ucSTAId
 );
 
-#endif /* #ifdef WLANTL_SOFTAP_FEATURE */
 #endif /* #ifndef WLAN_QCT_TLI_H */

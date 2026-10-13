@@ -143,7 +143,7 @@ static int wlan_suspend(hdd_context_t* pHddCtx)
    */
    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, "%s: Suspending Mc, Rx and Tx Threads",__func__);
 
-   init_completion(&pHddCtx->tx_sus_event_var);
+   INIT_COMPLETION(pHddCtx->tx_sus_event_var);
 
    /* Indicate Tx Thread to Suspend */
    set_bit(TX_SUSPEND_EVENT_MASK, &vosSchedContext->txEventFlag);
@@ -163,7 +163,7 @@ static int wlan_suspend(hdd_context_t* pHddCtx)
    /* Set the Tx Thread as Suspended */
    pHddCtx->isTxThreadSuspended = TRUE;
 
-   init_completion(&pHddCtx->rx_sus_event_var);
+   INIT_COMPLETION(pHddCtx->rx_sus_event_var);
 
    /* Indicate Rx Thread to Suspend */
    set_bit(RX_SUSPEND_EVENT_MASK, &vosSchedContext->rxEventFlag);
@@ -191,7 +191,7 @@ static int wlan_suspend(hdd_context_t* pHddCtx)
    /* Set the Rx Thread as Suspended */
    pHddCtx->isRxThreadSuspended = TRUE;
 
-   init_completion(&pHddCtx->mc_sus_event_var);
+   INIT_COMPLETION(pHddCtx->mc_sus_event_var);
 
    /* Indicate MC Thread to Suspend */
    set_bit(MC_SUSPEND_EVENT_MASK, &vosSchedContext->mcEventFlag);
@@ -488,8 +488,8 @@ void hddDevTmLevelChangedHandler(struct device *dev, int changedTmLevel)
 
    pHddCtx =  (hdd_context_t*)wcnss_wlan_get_drvdata(dev);
 
-   if((pHddCtx->tmInfo.currentTmLevel == newTmLevel) ||
-      (!pHddCtx->cfg_ini->thermalMitigationEnable))
+   if ((pHddCtx->tmInfo.currentTmLevel == newTmLevel) ||
+       (!pHddCtx->cfg_ini->thermalMitigationEnable))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD,VOS_TRACE_LEVEL_WARN,
                 "%s: TM Not enabled %d or Level does not changed %d",
@@ -500,9 +500,19 @@ void hddDevTmLevelChangedHandler(struct device *dev, int changedTmLevel)
       return;
    }
 
-   sme_SetTmLevel(pHddCtx->hHal, changedTmLevel, 0);
+   if ((newTmLevel < WLAN_HDD_TM_LEVEL_0) ||
+       (newTmLevel >= WLAN_HDD_TM_LEVEL_MAX))
+   {
+      VOS_TRACE(VOS_MODULE_ID_HDD,VOS_TRACE_LEVEL_ERROR,
+                "%s: TM level %d out of range",
+                __func__, newTmLevel);
+      return;
+   }
 
-   if(mutex_lock_interruptible(&pHddCtx->tmInfo.tmOperationLock))
+   if (changedTmLevel != WLAN_HDD_TM_LEVEL_4)
+      sme_SetTmLevel(pHddCtx->hHal, changedTmLevel, 0);
+
+   if (mutex_lock_interruptible(&pHddCtx->tmInfo.tmOperationLock))
    {
       VOS_TRACE(VOS_MODULE_ID_HDD,VOS_TRACE_LEVEL_ERROR,
                 "%s: Acquire lock fail", __func__);
@@ -516,12 +526,12 @@ void hddDevTmLevelChangedHandler(struct device *dev, int changedTmLevel)
                 sizeof(hdd_tmLevelAction_t));
 
 
-   if(pHddCtx->tmInfo.tmAction.enterImps)
+   if (pHddCtx->tmInfo.tmAction.enterImps)
    {
       staAdapater = hdd_get_adapter(pHddCtx, WLAN_HDD_INFRA_STATION);
-      if(staAdapater)
+      if (staAdapater)
       {
-         if(hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(staAdapater)))
+         if (hdd_connIsConnected(WLAN_HDD_GET_STATION_CTX_PTR(staAdapater)))
          {
             sme_RoamDisconnect(pHddCtx->hHal,
                                staAdapater->sessionId, 

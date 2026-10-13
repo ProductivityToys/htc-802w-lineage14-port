@@ -40,17 +40,19 @@
  */
 
 #if !defined( HDD_CONNECTION_H__ ) 
-#define HDD_CONNECTION_H__ 
+#define HDD_CONNECTION_H__
 #include <wlan_hdd_mib.h>
-#define HDD_MAX_NUM_IBSS_STA ( 4 )
+#define HDD_MAX_NUM_IBSS_STA ( 9 )
 #ifdef FEATURE_WLAN_TDLS
-#define HDD_MAX_NUM_TDLS_STA ( 4 )
+#define HDD_MAX_NUM_TDLS_STA ( 8 )
+#define TDLS_STA_INDEX_VALID(staId) \
+                          (((staId) >= 4) && ((staId) < 0xFF))
 #endif
 #define TKIP_COUNTER_MEASURE_STARTED 1
 #define TKIP_COUNTER_MEASURE_STOPED  0 
 /* Timeout (in ms) for Link to Up before Registering Station */
 #define ASSOC_LINKUP_TIMEOUT 60
-typedef enum 
+typedef enum
 {
    /** Not associated in Infra or participating in an IBSS / Ad-hoc network.*/
    eConnectionState_NotConnected,
@@ -110,6 +112,9 @@ typedef struct connection_info_s
    
     /** Remembers authenticated state */
    v_U8_t uIsAuthenticated;
+
+   /** Dot11Mode */
+   tANI_U32 dot11Mode;
    
 }connection_info_t;
 /*Forward declaration of Adapter*/
@@ -117,9 +122,7 @@ typedef struct hdd_adapter_s hdd_adapter_t;
 typedef struct hdd_context_s hdd_context_t;
 typedef struct hdd_station_ctx hdd_station_ctx_t;
 typedef struct hdd_ap_ctx_s  hdd_ap_ctx_t;
-#ifdef CONFIG_CFG80211   
 typedef struct hdd_mon_ctx_s  hdd_mon_ctx_t;
-#endif
 
 
 extern v_BOOL_t hdd_connIsConnected( hdd_station_ctx_t *pHddStaCtx );
@@ -136,5 +139,5 @@ int hdd_SetGENIEToCsr( hdd_adapter_t *pAdapter, eCsrAuthType *RSNAuthType );
 int hdd_set_csr_auth_type( hdd_adapter_t *pAdapter, eCsrAuthType RSNAuthType );
 VOS_STATUS hdd_roamRegisterTDLSSTA( hdd_adapter_t *pAdapter,
                                     tANI_U8 *peerMac, tANI_U16 staId, tANI_U8 ucastSig);
-
+void hdd_PerformRoamSetKeyComplete(hdd_adapter_t *pAdapter);
 #endif

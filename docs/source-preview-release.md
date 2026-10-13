@@ -33,3 +33,11 @@ patching and firmware extraction still need a reproducible public workflow.
 
 Google apps, WeChat/WeCom packages, user data and private calibration backups
 are not supplied. App compatibility is separate from the Android port.
+
+## 2026-10-13 correction
+
+v0.1.0-source retained an earlier experimental Prima 3.2.0.71 driver, not
+the successful reference 3.2.3.22 module source. Do not use that tag to rebuild
+a working WLAN module. v0.2.0-rom-preview corrects the complete driver and adds
+debug stripping / bootstrap size checks. The original source tag is retained
+for audit history; its GitHub release notes carry this correction.

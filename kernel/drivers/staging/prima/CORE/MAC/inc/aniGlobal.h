@@ -64,9 +64,7 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 #include "halTypes.h"
 #include "sirCommon.h"
 #include "aniSystemDefs.h"
-#ifndef ANI_OS_TYPE_OSX
 #include "sysDef.h"
-#endif
 #include "dphGlobal.h"
 #include "limGlobal.h"
 #include "pmmGlobal.h"
@@ -76,19 +74,10 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 #include "utilsGlobal.h"
 #include "sirApi.h"
 
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-#include "halGlobal.h"
-#include "halDataStruct.h"
-#include "pttModule.h"
-#endif
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 #include "wlan_qct_hal.h"
-#endif 
 
-#ifdef ANI_PRODUCT_TYPE_CLIENT
 #include "pmc.h"
-#endif
 
 #include "csrApi.h"
 #ifdef WLAN_FEATURE_VOWIFI_11R
@@ -112,9 +101,7 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 #include "ccxApi.h"
 #include "ccxGlobal.h"
 #endif
-#ifdef WLAN_FEATURE_P2P
 #include "p2p_Api.h"
-#endif
 
 #if defined WLAN_FEATURE_VOWIFI_11R
 #include <limFTDefs.h>
@@ -128,11 +115,9 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 // New HAL API interface defs.
 #include "logDump.h"
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 //Check if this definition can actually move here from halInternal.h even for Volans. In that case
 //this featurization can be removed.
 #define PMAC_STRUCT( _hHal )  (  (tpAniSirGlobal)_hHal )
-#endif
 
 #define ANI_DRIVER_TYPE(pMac)     (((tpAniSirGlobal)(pMac))->gDriverType)
 // -------------------------------------------------------------------
@@ -156,14 +141,14 @@ typedef struct sAniSirGlobal *tpAniSirGlobal;
 /* max number of legacy bssid we can store during scan on one channel */
 #define MAX_NUM_LEGACY_BSSID_PER_CHANNEL    10
 
-#if defined WLAN_FEATURE_P2P
 #define P2P_WILDCARD_SSID "DIRECT-" //TODO Put it in proper place;
 #define P2P_WILDCARD_SSID_LEN 7
 
 #ifdef WLAN_FEATURE_CONCURRENT_P2P
 #define MAX_NO_OF_P2P_SESSIONS  5
 #endif //WLAN_FEATURE_CONCURRENT_P2P
-#endif //WLAN_FEATURE_P2P
+
+#define SPACE_ASCII_VALUE  32
 
 #define SPACE_ASCII_VALUE  32
 
@@ -198,10 +183,8 @@ typedef struct sLimTimers
     //DURING limInitialize DONOT ZERO THEM OUT.
 
 //STA SPECIFIC TIMERS
-#if defined(ANI_PRODUCT_TYPE_CLIENT) || defined(ANI_AP_CLIENT_SDK)
     // Periodic background scan timer
     TX_TIMER   gLimBackgroundScanTimer;
-#endif
 
     TX_TIMER    gLimPreAuthClnupTimer;
     //TX_TIMER    gLimAuthResponseTimer[HAL_NUM_STA];
@@ -260,9 +243,7 @@ typedef struct sLimTimers
 #ifdef FEATURE_WLAN_CCX
     TX_TIMER           gLimCcxTsmTimer;
 #endif
-#ifdef WLAN_FEATURE_P2P
     TX_TIMER           gLimRemainOnChannelTimer;
-#endif
 #ifdef FEATURE_WLAN_TDLS_INTERNAL
     TX_TIMER           gLimTdlsDisRspWaitTimer;
     TX_TIMER           gLimTdlsLinkSetupRspTimeouTimer;
@@ -272,10 +253,13 @@ typedef struct sLimTimers
     TX_TIMER           gLimPeriodicJoinProbeReqTimer;
     TX_TIMER           gLimDisassocAckTimer;
     TX_TIMER           gLimDeauthAckTimer;
-#ifdef WLAN_FEATURE_P2P
     // This timer is started when single shot NOA insert msg is sent to FW for scan in P2P GO mode
     TX_TIMER           gLimP2pSingleShotNoaInsertTimer;
-#endif
+    /* This timer is used to convert active channel to
+     * passive channel when there is no beacon
+     * for a period of time on a particular DFS channel
+     */
+    TX_TIMER           gLimActiveToPassiveChannelTimer;
 //********************TIMER SECTION ENDS**************************************************
 // ALL THE FIELDS BELOW THIS CAN BE ZEROED OUT in limInitialize
 //****************************************************************************************
@@ -333,9 +317,12 @@ typedef struct sAniSirLim
     tANI_U32   gLimCurrentScanChannelId;
 
     // Hold onto SCAN criteria
-#ifdef WLAN_FEATURE_P2P
-    tSirSmeScanReq *gpLimSmeScanReq; // this one is used in P2P GO case when scan needs to be actually done a few BIs later after publishing NOA
-#endif
+    /* The below is used in P2P GO case when we need to defer processing SME Req
+     * to LIM and insert NOA first and process SME req once SNOA is started
+     */
+    tANI_U16 gDeferMsgTypeForNOA;
+    tANI_U32 *gpDefdSmeMsgForNOA;
+
     tLimMlmScanReq *gpLimMlmScanReq;
 
     /// This indicates total length of 'matched' scan results
@@ -351,7 +338,20 @@ typedef struct sAniSirLim
     tLimScanResultNode
            *gLimCachedScanHashTable[LIM_MAX_NUM_OF_SCAN_RESULTS];
 
-#if defined(ANI_PRODUCT_TYPE_CLIENT) || defined(ANI_AP_CLIENT_SDK)
+    /// This indicates total length of 'matched' scan results
+    tANI_U16   gLimMlmLfrScanResultLength;
+
+    /// This indicates total length of 'cached' scan results
+    tANI_U16   gLimSmeLfrScanResultLength;
+
+    /**
+     * Hash table definition for storing LFR SCAN results
+     * This is the placed holder for roaming candidates as forwarded
+     * by FW
+     */
+    tLimScanResultNode
+        *gLimCachedLfrScanHashTable[LIM_MAX_NUM_OF_SCAN_RESULTS];
+
     /// Place holder for current channel ID
     /// being scanned during background scanning
     tANI_U32   gLimBackgroundScanChannelId;
@@ -362,7 +362,6 @@ typedef struct sAniSirLim
     tANI_U16    gLimRestoreCBNumScanInterval;
     tANI_U16    gLimRestoreCBCount;
     tSirMacAddr gLimLegacyBssidList[MAX_NUM_LEGACY_BSSID_PER_CHANNEL];
-#endif
 
     //
     // If this flag is 1,
@@ -377,15 +376,10 @@ typedef struct sAniSirLim
     //
     tANI_U32 gLimTriggerBackgroundScanDuringQuietBss;
 
-#ifdef ANI_AP_SDK
-    tLimScanDurationConvert gLimScanDurationConvert; /* Used to store converted scan duration values in TU and TICKS */
-#endif /* ANI_AP_SDK */
 
-#ifdef WLAN_FEATURE_P2P
     // This variable store the total duration to do scan
     tANI_U32 gTotalScanDuration;
     tANI_U32 p2pRemOnChanTimeStamp;
-#endif    
 
     // abort scan is used to abort an on-going scan
     tANI_U8 abortScan;
@@ -398,43 +392,10 @@ typedef struct sAniSirLim
     // Place holder for StartBssReq message
     // received by SME state machine
 
-#if defined(ANI_PRODUCT_TYPE_AP)
-    // Place holder for Neighbor BSS list received in
-    // SME_JOIN/REASSOC_REQ messages
-    tSirMultipleNeighborBssInfo gLimNeighborBssList;
-#endif
-  tANI_U8             gLimCurrentBssUapsd;
+    tANI_U8             gLimCurrentBssUapsd;
 
-
-/* These global varibales are now moved to session Table in order to support BT-AMP oct 9th review  */
-#if 0
-    // Place holder for BSS description that we're
-    // currently joined with
-    tSirMacAddr         gLimCurrentBssId;
-    tSirMacChanNum      gLimCurrentChannelId;
-    tSirMacSSid         gLimCurrentSSID;
-    tANI_U16            gLimCurrentBssCaps;
-    
-    // QosCaps is a bit map of various qos capabilities - see defn above
-    tANI_U8             gLimCurrentBssQosCaps;
-    tANI_U16            gLimCurrentBssPropCap;
-    tANI_U8             gLimSentCapsChangeNtf;
-    tANI_U32            gLimCurrentTitanHtCaps;
-
-    // Place holder for BSS description that
-    // we're currently Reassociating
-    tSirMacAddr           gLimReassocBssId;
-    tSirMacChanNum        gLimReassocChannelId;
-    tSirMacSSid           gLimReassocSSID;
-    tANI_U16              gLimReassocBssCaps;
-    tANI_U8               gLimReassocBssQosCaps;
-    tANI_U16              gLimReassocBssPropCap;
-    tANI_U32              gLimReassocTitanHtCaps;
-
-    tANI_U8                 gLimBssIdx;  // BSSIdx is made session speicific 
-#endif
-
-    tANI_U8     gLimForceNoPropIE; /* This is used for testing sta legacy bss detect feature */
+    /* This is used for testing sta legacy bss detect feature */
+    tANI_U8     gLimForceNoPropIE;
 
     //
     // Store the BSS Index returned by HAL during
@@ -636,17 +597,6 @@ typedef struct sAniSirLim
     //////////////////////////////////////////     STATES RELATED END ///////////////////////////////////////////
 
     //////////////////////////////////////////     MISC RELATED START ///////////////////////////////////////////
-#if (WNI_POLARIS_FW_PACKAGE == ADVANCED)
-    // Place holder for alternate radio list
-    tSirMultipleAlternateRadioInfo gLimAlternateRadioList;
-#endif
-
-    // Place holder for Measurement Req/Rsp/Ind related info
-#if (WNI_POLARIS_FW_PACKAGE == ADVANCED) && defined(ANI_PRODUCT_TYPE_AP)
-    tpSirSmeMeasurementReq    gpLimMeasReq;
-    tLimMeasParams            gLimMeasParams;
-    tpLimMeasData             gpLimMeasData;
-#endif
 
     // WDS info
     tANI_U32            gLimNumWdsInfoInd;
@@ -955,11 +905,9 @@ tLimMlmOemDataReq       *gpLimMlmOemDataReq;
 tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
 #endif
 
-#ifdef WLAN_FEATURE_P2P
     tSirRemainOnChnReq  *gpLimRemainOnChanReq; //hold remain on chan request in this buf
     vos_list_t  gLimMgmtFrameRegistratinQueue;
-    tANI_U32    actionFrameSessionId;
-#endif
+    tANI_U32    mgmtFrameSessionId;
     tSirBackgroundScanMode gLimBackgroundScanMode;
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_CCX) || defined(FEATURE_WLAN_LFR)
@@ -967,9 +915,10 @@ tLimMlmOemDataRsp       *gpLimMlmOemDataRsp;
     tANI_U8 reAssocRetryAttempt;
 #endif
     tLimDisassocDeauthCnfReq limDisassocDeauthCnfReq;
+    tANI_U8 deferredMsgCnt;
+    tSirDFSChannelList    dfschannelList;
 } tAniSirLim, *tpAniSirLim;
 
-#ifdef WLAN_FEATURE_P2P
 typedef struct sLimMgmtFrameRegistration
 {
     vos_list_node_t node;     // MUST be first element
@@ -978,7 +927,6 @@ typedef struct sLimMgmtFrameRegistration
     tANI_U16        sessionId;
     tANI_U8         matchData[1];
 } tLimMgmtFrameRegistration, *tpLimMgmtFrameRegistration;
-#endif
 
 #if defined WLAN_FEATURE_VOWIFI
 typedef struct sRrmContext
@@ -996,7 +944,6 @@ typedef struct sFTContext
 } tftContext, *tpFTContext;
 #endif
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
 //Check if this definition can actually move here even for Volans. In that case
 //this featurization can be removed.
 /** ------------------------------------------------------------------------- * 
@@ -1046,7 +993,6 @@ typedef struct sHalMacStartParameters
     tDriverType  driverType;
 
 } tHalMacStartParameters;
-#endif 
 
 // -------------------------------------------------------------------
 /// MAC Sirius parameter structure
@@ -1054,9 +1000,6 @@ typedef struct sAniSirGlobal
 
 {
     tDriverType  gDriverType;
-#if defined(ANI_OS_TYPE_RTAI_LINUX)
-    struct rtLibApp * rt;
-#endif
 
     // we should be able to save this hddHandle in here and deprecate
     // the pAdapter.  For now, compiles are a problem because there
@@ -1074,14 +1017,6 @@ typedef struct sAniSirGlobal
     tAniSirSch   sch;
     tAniSirSys   sys;
     tAniSirUtils utils;
-
-#ifndef WLAN_FTM_STUB 
-#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
-    tPttModuleVariables ptt;
-#endif
-#endif
-
-    tAniSirTxWrapper txWrapper;
     // PAL/HDD handle
     tHddHandle hHdd;
 
@@ -1096,25 +1031,21 @@ typedef struct sAniSirGlobal
 #ifdef FEATURE_OEM_DATA_SUPPORT
     tOemDataStruct oemData;
 #endif
-#ifdef FEATURE_WLAN_TDLS
+#ifdef FEATURE_WLAN_TDLS_INTERNAL
     tCsrTdlsCtxStruct tdlsCtx ;
 #endif
-#ifdef ANI_PRODUCT_TYPE_CLIENT
     tPmcInfo     pmc;
     tSmeBtcInfo  btc;
-#endif
 
     tCcm ccm;
 
 #if defined WLAN_FEATURE_VOWIFI
     tRrmContext rrm;
 #endif
-#ifdef WLAN_FEATURE_P2P
 #ifdef WLAN_FEATURE_CONCURRENT_P2P
     tp2pContext p2pContext[MAX_NO_OF_P2P_SESSIONS];
 #else
     tp2pContext p2pContext;
-#endif
 #endif
 
 #if defined WLAN_FEATURE_VOWIFI_11R
@@ -1128,6 +1059,9 @@ typedef struct sAniSirGlobal
     /* Instead of static allocation I will dyanamically allocate memory for dumpTableEntry
         Thinking of using linkedlist  */ 
     tDumpModuleEntry *dumpTableEntry[MAX_DUMP_TABLE_ENTRY];
+#ifdef FEATURE_WLAN_TDLS
+    v_BOOL_t isTdlsPowerSaveProhibited;
+#endif
     
 } tAniSirGlobal;
 

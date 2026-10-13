@@ -18,6 +18,7 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*==========================================================================
  *
  *  @file:     wlan_hal_msg.h
@@ -26,7 +27,7 @@
  *
  *  @author:   Kumar Anand
  *
- *             Copyright (C) 2010, Qualcomm, Inc. 
+ *             Copyright (C) 2010, Qualcomm Technologies, Inc. 
  *             All rights reserved.
  *
  *=========================================================================*/
@@ -54,7 +55,7 @@
   All values are in the range 0..255 (ie they are 8-bit values)
  ---------------------------------------------------------------------------*/
 #define WLAN_HAL_VER_MAJOR 1
-#define WLAN_HAL_VER_MINOR 3
+#define WLAN_HAL_VER_MINOR 4
 #define WLAN_HAL_VER_VERSION 1
 #define WLAN_HAL_VER_REVISION 2
 
@@ -100,10 +101,20 @@ typedef tANI_U8 tHalIpv4Addr[4];
     PARAM_llGCOEXIST_CHANGED|PARAM_HT20MHZCOEXIST_CHANGED|PARAM_NON_GF_DEVICES_PRESENT_CHANGED|PARAM_RIFS_MODE_CHANGED|PARAM_LSIG_TXOP_FULL_SUPPORT_CHANGED| PARAM_OBSS_MODE_CHANGED)
 
 /*Dump command response Buffer size*/
-#define DUMPCMD_RSP_BUFFER 100
+#define DUMPCMD_RSP_BUFFER 500
 
 /*Version string max length (including NUL) */
 #define WLAN_HAL_VERSION_LENGTH  64
+
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+#define CHANNEL_LIST_STATIC                   1 /* Occupied channel list remains static */
+#define CHANNEL_LIST_DYNAMIC_INIT             2 /* Occupied channel list can be learnt after init */
+#define CHANNEL_LIST_DYNAMIC_FLUSH            3 /* Occupied channel list can be learnt after flush */
+#define CHANNEL_LIST_DYNAMIC_UPDATE           4 /* Occupied channel list can be learnt after update */
+#define WLAN_HAL_ROAM_SCAN_MAX_PROBE_SIZE     450
+#define WLAN_HAL_ROAM_SCAN_MAX_CHANNELS       NUM_RF_CHANNELS
+#define WLAN_HAL_ROAM_SCAN_RESERVED_BYTES     61
+#endif
 
 /* Message types for messages exchanged between WDI and HAL */
 typedef enum 
@@ -351,14 +362,21 @@ typedef enum
 
    WLAN_HAL_UPDATE_VHT_OP_MODE_REQ          = 182,
    WLAN_HAL_UPDATE_VHT_OP_MODE_RSP          = 183,
+
    WLAN_HAL_P2P_NOA_START_IND               = 184,
 
    WLAN_HAL_GET_ROAM_RSSI_REQ               = 185,
    WLAN_HAL_GET_ROAM_RSSI_RSP               = 186,
-
+   
    WLAN_HAL_CLASS_B_STATS_IND               = 187,
    WLAN_HAL_DEL_BA_IND                      = 188,
-   WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
+   WLAN_HAL_DHCP_START_IND                  = 189,
+   WLAN_HAL_DHCP_STOP_IND                   = 190,
+   WLAN_ROAM_SCAN_OFFLOAD_REQ               = 191,
+   WLAN_ROAM_SCAN_OFFLOAD_RSP               = 192,
+   WLAN_HAL_WIFI_PROXIMITY_REQ              = 193,
+   WLAN_HAL_WIFI_PROXIMITY_RSP              = 194,
+  WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
 
 /* Enumeration for Version */
@@ -366,7 +384,8 @@ typedef enum
 {
    WLAN_HAL_MSG_VERSION0 = 0,
    WLAN_HAL_MSG_VERSION1 = 1,
-   WLAN_HAL_MSG_VERSION_MAX_FIELD = 0x7FFF /*define as 2 bytes data*/
+   WLAN_HAL_MSG_WCNSS_CTRL_VERSION = 0x7FFF, /*define as 2 bytes data*/
+   WLAN_HAL_MSG_VERSION_MAX_FIELD  = WLAN_HAL_MSG_WCNSS_CTRL_VERSION
 }tHalHostMsgVersion;
 
 /* Enumeration for Boolean - False/True, On/Off */
@@ -550,6 +569,7 @@ typedef enum eSriLinkState {
     eSIR_LINK_FINISH_CAL_STATE  = 13,
 #ifdef WLAN_FEATURE_P2P
     eSIR_LINK_LISTEN_STATE      = 14,
+    eSIR_LINK_SEND_ACTION_STATE = 15,
 #endif
     eSIR_LINK_MAX = WLAN_HAL_MAX_ENUM_SIZE
 } tSirLinkState;
@@ -1435,12 +1455,12 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U8 vhtTxBFEnabled:1;
     tANI_U8 reserved:5;
 
-    /*These rates are the intersection of peer and self capabilities.*/
+        /*These rates are the intersection of peer and self capabilities.*/
     tSirSupportedRates_V1 supportedRates;
 
     tANI_U8  vhtCapable;
     tANI_U8  vhtTxChannelWidthSet;
-    
+
 } tConfigStaParams_V1, *tpConfigStaParams_V1;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -1611,6 +1631,15 @@ typedef enum
     HAL_P2P_GO=8,
     HAL_MAX_CONCURRENCY_PERSONA=4
 } tHalConcurrencyMode;
+
+// IFACE PERSONA for different Operating modes
+typedef enum
+{
+   HAL_IFACE_UNKNOWN=0,
+   HAL_IFACE_STA_MODE=1,
+   HAL_IFACE_P2P_MODE=2,
+   HAL_IFACE_MAX=0x7FFFFFFF,
+}tHalIfacePersona;
 
 typedef PACKED_PRE struct PACKED_POST
 {
@@ -2099,6 +2128,13 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tSetBssKeyParams setBssKeyParams;
 } tSetBssKeyReqMsg, *tpSetBssKeyReqMsg;
+
+/* tagged version of set bss key */
+typedef PACKED_PRE struct PACKED_POST
+{
+   tSetBssKeyReqMsg  Msg;
+   uint32            Tag;
+} tSetBssKeyReqMsgTagged;
 
 /*---------------------------------------------------------------------------
   WLAN_HAL_SET_BSSKEY_RSP
@@ -3092,45 +3128,6 @@ typedef PACKED_PRE struct PACKED_POST
    tSetKeyDoneParams setKeyDoneParams;
 }  tSetKeyDoneMsg, *tpSetKeyDoneMsg;
 
-typedef PACKED_PRE struct PACKED_POST
-{
-  uint8 selfStaIdx;
-  uint8 peerStaIdx;
-  boolean frameSentForStart;
-  boolean frameSuccessfullySent;
-
-} tScanTxBdCompParams, *tpScanTxBdCompParams;
-
-
-typedef PACKED_PRE struct PACKED_POST
-{
-   tHalMsgHeader header;
-   tScanTxBdCompParams scanTxBdCompleteIndParams;
-} tScanTxBdCompleteInd, *tpScanTxBdCompleteInd;
-
-typedef PACKED_PRE struct PACKED_POST
-{
-   tHalMsgHeader header;
-   tANI_U32      mode;
-   tANI_U32      parameter;
-} tCoexOpModeType, *tpCoexOpModeType;
-
-
-typedef PACKED_PRE struct PACKED_POST
-{
-   tHalMsgHeader header;
-   tANI_U32 bssIdx:8;
-   tANI_U32 timerType:3;
-   tANI_U32 reserved:21;
-} tPwrSaveModeTOReqType, *tpPwrSaveModeTOReqType;
-
-
-typedef PACKED_PRE struct PACKED_POST
-{
-    tHalMsgHeader header;
-} tTxBpsReqType, *tpTxBpsReqType;
-
-
 /*---------------------------------------------------------------------------
  * WLAN_HAL_DOWNLOAD_NV_REQ
  *--------------------------------------------------------------------------*/
@@ -3680,6 +3677,20 @@ typedef PACKED_PRE struct PACKED_POST
 }  tHalExitBmpsReqMsg, *tpHalExitBmpsReqMsg;
 
 /*---------------------------------------------------------------------------
+ * WLAN_HAL_MISSED_BEACON_IND
+ *--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8     bssIdx;
+} tHalMissedBeaconIndParams, *tpHalMissedBeaconIndParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMissedBeaconIndParams missedBeaconIndParams;
+}  tHalMissedBeaconIndMsg, *tpHalMissedBeaconIndMsg;
+
+/*---------------------------------------------------------------------------
  * WLAN_HAL_ADD_BCN_FILTER_REQ
  *--------------------------------------------------------------------------*/
 /* Beacon Filtering data structures */
@@ -3741,7 +3752,9 @@ typedef PACKED_PRE struct PACKED_POST
 #define HAL_OFFLOAD_DISABLE                         0
 #define HAL_OFFLOAD_ENABLE                          1
 #define HAL_OFFLOAD_BCAST_FILTER_ENABLE             0x2
+#define HAL_OFFLOAD_MCAST_FILTER_ENABLE             0x4
 #define HAL_OFFLOAD_ARP_AND_BCAST_FILTER_ENABLE     (HAL_OFFLOAD_ENABLE|HAL_OFFLOAD_BCAST_FILTER_ENABLE)
+#define HAL_OFFLOAD_IPV6NS_AND_MCAST_FILTER_ENABLE  (HAL_OFFLOAD_ENABLE|HAL_OFFLOAD_MCAST_FILTER_ENABLE)
 
 typedef PACKED_PRE struct PACKED_POST _tHalNSOffloadParams
 {
@@ -3757,6 +3770,7 @@ typedef PACKED_PRE struct PACKED_POST _tHalNSOffloadParams
    tANI_U8 reserved1 : 5;
    tANI_U8 reserved2;   //make it DWORD aligned
    tANI_U8 bssIdx;
+   tANI_U32 slotIndex; // slot index for this offload
 } tHalNSOffloadParams;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -3826,7 +3840,7 @@ typedef PACKED_PRE struct PACKED_POST
 {
    tHalMsgHeader header;
    tHalRSSIThresholds rssiThreshParams;
-}  tHalRSSIThresholdsReqMsg, *tpHalRSSIThresholdReqMsg;
+}  tHalRSSIThresholdReqMsg, *tpHalRSSIThresholdReqMsg;
 
 /*---------------------------------------------------------------------------
  * WLAN_HAL_ENTER_UAPSD_REQ
@@ -4546,11 +4560,20 @@ typedef PACKED_PRE struct PACKED_POST
   tANI_U32    status;
 }tAddStaSelfParams, *tpAddStaSelfParams;
 
+typedef PACKED_PRE struct PACKED_POST
+{
+  tSirMacAddr selfMacAddr;
+  tANI_U32    status;
+  tHalIfacePersona iface_persona;
+}tAddStaSelfParams_V1, *tpAddStaSelfParams_V1;
 
 typedef PACKED_PRE struct PACKED_POST
 {
     tHalMsgHeader header;
+    PACKED_PRE union PACKED_POST {
     tAddStaSelfParams addStaSelfParams;
+    tAddStaSelfParams_V1 addStaSelfParams_V1;
+    }uAddStaSelfParams;
 }tAddStaSelfReq, *tpAddStaSelfReq;
 
 /*---------------------------------------------------------------------------
@@ -4748,6 +4771,8 @@ typedef PACKED_PRE struct PACKED_POST
 #define WLAN_COEX_IND_DATA_SIZE (4)
 #define WLAN_COEX_IND_TYPE_DISABLE_HB_MONITOR (0)
 #define WLAN_COEX_IND_TYPE_ENABLE_HB_MONITOR (1)
+#define WLAN_COEX_IND_TYPE_SCANS_ARE_COMPROMISED_BY_COEX (2)
+#define WLAN_COEX_IND_TYPE_SCANS_ARE_NOT_COMPROMISED_BY_COEX (3)
 
 typedef PACKED_PRE struct PACKED_POST
 {
@@ -4940,6 +4965,7 @@ typedef enum
    ePNO_MODE_IMMEDIATE,
    ePNO_MODE_ON_SUSPEND,
    ePNO_MODE_ON_RESUME,
+   ePNO_MODE_DELAY,
    ePNO_MODE_MAX = WLAN_HAL_MAX_ENUM_SIZE
 } ePNOMode;
 
@@ -4959,6 +4985,8 @@ typedef enum
     eAUTH_TYPE_FT_RSN_PSK            = 7,
     eAUTH_TYPE_WAPI_WAI_CERTIFICATE  = 8,
     eAUTH_TYPE_WAPI_WAI_PSK          = 9,
+    eAUTH_TYPE_CCKM_WPA              = 10,
+    eAUTH_TYPE_CCKM_RSN              = 11,
     
     eAUTH_TYPE_MAX = WLAN_HAL_MAX_ENUM_SIZE
 
@@ -5156,15 +5184,17 @@ typedef PACKED_PRE struct PACKED_POST
 }  tSetPrefNetwListResp, *tpSetPrefNetwListResp;
 
 /*
-  Preferred network indication parameters 
+  Preferred network indication parameters
 */
 typedef PACKED_PRE struct PACKED_POST {
 
   /*Network that was found with the highest RSSI*/
   tSirMacSSid ssId;
-  
+
   /*Indicates the RSSI */
   tANI_U8     rssi;
+
+  tANI_U16    frameLength;
 
 } tPrefNetwFoundParams, * tpPrefNetwFoundParams;
 
@@ -5184,7 +5214,67 @@ typedef PACKED_PRE struct PACKED_POST {
   tANI_U8          ucRssiThreshold;
 
 } tRssiFilterParams, * tpRssiFilterParams;
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+typedef PACKED_PRE struct PACKED_POST
+{
+   tSirMacSSid ssId;
+   tANI_U8     currAPbssid[HAL_MAC_ADDR_LEN];
+   tANI_U32    authentication;
+   tEdType     encryption;
+   tEdType     mcencryption;
+   tANI_U8     ChannelCount;
+   tANI_U8     ChannelCache[WLAN_HAL_ROAM_SCAN_MAX_CHANNELS];
+}tRoamNetworkType;
 
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U8 mdiePresent;
+   tANI_U16 mobilityDomain;
+}tMobilityDomainInfo;
+
+typedef PACKED_PRE struct PACKED_POST {
+   eAniBoolean       RoamScanOffloadEnabled;
+   tANI_S8           LookupThreshold;
+   tANI_U8           RoamRssiDiff;
+   tANI_U8           ChannelCacheType;
+   tANI_U8           Command;
+   tANI_U8           StartScanReason;
+   tANI_U16          NeighborScanTimerPeriod;
+   tANI_U16          NeighborRoamScanRefreshPeriod;
+   tANI_U16          NeighborScanChannelMinTime;
+   tANI_U16          NeighborScanChannelMaxTime;
+   tANI_U16          EmptyRefreshScanPeriod;
+   tANI_U8           ValidChannelCount;
+   tANI_U8           ValidChannelList[WLAN_HAL_ROAM_SCAN_MAX_CHANNELS];
+   eAniBoolean       IsCCXEnabled;
+
+   tANI_U16          us24GProbeSize;
+   tANI_U8           a24GProbeTemplate[WLAN_HAL_ROAM_SCAN_MAX_PROBE_SIZE];
+   tANI_U16          us5GProbeSize;
+   tANI_U8           a5GProbeTemplate[WLAN_HAL_ROAM_SCAN_MAX_PROBE_SIZE];
+   /* Add Reserved bytes */
+   tANI_U8           nProbes;
+   tANI_U16          HomeAwayTime;
+   tANI_U8           ReservedBytes[WLAN_HAL_ROAM_SCAN_RESERVED_BYTES];
+   tRoamNetworkType  ConnectedNetwork;
+   tMobilityDomainInfo MDID;
+} tRoamCandidateListParams, * tpRoamCandidateListParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+           tHalMsgHeader header;
+              tRoamCandidateListParams RoamScanOffloadNetwListParams;
+}  tSetRoamScanOffloadReq, *tpRoamScanOffloadReq;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+           tHalMsgHeader header;
+
+              /*status of the request - just to indicate that PNO has acknowledged
+               *      the request and will start scanning*/
+              tANI_U32   status;
+}  tSetRoamOffloadScanResp, *tpSetRoamOffloadScanResp;
+#endif
 /*
   RSSI Filter request 
 */
@@ -5527,6 +5617,9 @@ typedef PACKED_PRE struct PACKED_POST
 
   /* Beacon Early Termination Interval */
   tANI_U32 uBETInterval; 
+
+  /* MAX LI for modulated DTIM */
+  tANI_U32 uMaxLIModulatedDTIM;
 }tSetPowerParamsType, *tpSetPowerParamsType;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -5572,7 +5665,9 @@ typedef enum {
     RTT                = 20,
     RATECTRL           = 21,
     WOW                = 22,
-    MAX_FEATURE_SUPPORTED = 128,
+    WLAN_ROAM_SCAN_OFFLOAD = 23,
+    EXTENDED_NSOFFLOAD_SLOT = 24,
+    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
 typedef PACKED_PRE struct PACKED_POST{
@@ -5590,6 +5685,11 @@ typedef PACKED_PRE struct PACKED_POST{
 #define IS_MCC_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(MCC)))
 #define IS_SLM_SESSIONIZATION_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(SLM_SESSIONIZATION)))
 #define IS_FEATURE_SUPPORTED_BY_HOST(featEnumValue) (!!halMsg_GetHostWlanFeatCaps(featEnumValue))
+#define IS_WLANACTIVE_OFFLOAD_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(WLANACTIVE_OFFLOAD)))
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+#define IS_ROAM_SCAN_OFFLOAD_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(WLAN_ROAM_SCAN_OFFLOAD)))
+#endif
+
 tANI_U8 halMsg_GetHostWlanFeatCaps(tANI_U8 feat_enum_value);
 
 #define setFeatCaps(a,b)   {  tANI_U32 arr_index, bit_index; \
@@ -5697,6 +5797,8 @@ typedef PACKED_PRE struct PACKED_POST
 
 #define WLAN_HAL_GTK_OFFLOAD_FLAGS_DISABLE (1 << 0)
 
+#define GTK_SET_BSS_KEY_TAG  0x1234AA55
+
 typedef PACKED_PRE struct PACKED_POST
 {
   tANI_U32     ulFlags;             /* optional flags */
@@ -5762,6 +5864,22 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tHalGtkOffloadGetInfoRspParams gtkOffloadGetInfoRspParams;
 }  tHalGtkOffloadGetInfoRspMsg, *tpHalGtkOffloadGetInfoRspMsg;
+
+/*---------------------------------------------------------------------------
+* WLAN_HAL_DHCP_IND
+*--------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   /*Indicates the device mode which indicates about the DHCP activity */
+    tANI_U8 device_mode;
+    tSirMacAddr macAddr;
+} tDHCPInfo, *tpDHCPInfo;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader  header;
+   tANI_U32       status;  /* success or failure */
+} tDHCPIndStatus, *tpDHCPIndstatus;
 
 /*
    Thermal Mitigation mode of operation.

@@ -1,6 +1,6 @@
 # HTC 802w 重新跑起 Android 7.1
 
-**Unofficial HTC 802w / m7cdug Android 7.1.1 community port · Source Preview**
+**Unofficial HTC 802w / m7cdug Android 7.1.1 community port · ROM Developer Preview**
 
 让国行双卡 HTC One 802w 运行 LineageOS 14.1，具备可操作界面、Wi-Fi
 联网和基本相机功能。test44 已在一台 802w 上完成实测。
@@ -20,11 +20,16 @@ S-ON、TWRP 3.0.2-0。802d、802t、国际单卡 M7 未验证。企业微信是�
 
 ## 下载入口
 
-**源码预览和后续 ROM 都放在本仓库的 [Releases](https://github.com/ProductivityToys/htc-802w-lineage14-port/releases)。**
+**源码与可安装 ROM 都放在本仓库的 [Releases](https://github.com/ProductivityToys/htc-802w-lineage14-port/releases)。**
 
-当前仅提供源码预览，没有可公开分发的完整 ROM。旧 test42 ZIP 带本机
-MAC / 校准文件、未通过全新安装验收，也不含相机补丁。Google 服务停用
-等精简属于运行时用户设置，没有被标成新的 Lite ROM。
+当前 ROM 预览版 v0.2.0-rom-preview 提供可安装 ZIP、匹配 boot 与校验文件。
+使用每台手机自身的 MAC/NV/无线固件，不分发本机配置。[刷机说明](docs/rom-install.md)。
+已从清空 data/cache 的状态验证启动，并复验最终 ZIP、Wi-Fi 重连和前后摄。
+Google 服务停用等精简仍属于运行时设置，未作为 Lite ROM 打包。
+
+**首版源码更正：v0.1.0-source 误保留早期 Prima 3.2.0.71 实验驱动。**
+当前源码已补齐成功基线实际使用的参考 Prima 3.2.3.22，并增加模块调试信息
+剥离及 8 MiB 启动缓冲上限检查。请使用后续版本重建 Wi-Fi 模块。
 
 ## 仓库结构
 
@@ -64,7 +69,8 @@ SHA-256 清单。使用 `m7cdug_test44_defconfig`，内核和 WLAN 模块必须�
 ## Android 集成与刷机
 
 见 [集成说明](docs/android-integration.md)。本仓库提供构建与重打包工具，
-完整安装包仍需设备校准处理、用户空间补丁、型号保护与全新安装验收。
+已验证的预览安装包实现设备校准处理、用户空间补丁与型号保护；
+安装要求及验收范围见 [刷机说明](docs/rom-install.md)。
 
 ```bash
 python3 scripts/repack_boot.py known-good-boot.img zImage boot-new.img
@@ -78,7 +84,8 @@ cache 为 p39，data 为 p40。刷机前备份自己的 boot 和原厂固件，�
 
 内核遵循 `kernel/COPYING`（GPLv2）及各文件原许可证；Prima 有文件级 ISC
 声明和 Dual BSD/GPL 模块声明。新增工具和原创说明使用 [MIT](LICENSES/MIT.txt)。
-本机原厂 WCNSS 固件、NV、HAL、账户、应用与备份均未导入。
+本机原厂 WCNSS 固件、NV、账户、应用与备份均未导入。ROM 包含原始
+公开底包中的 vendor HAL，来源及许可证保持原样；新增工具的 MIT 许可不覆盖它们。
 
 见 [sources.json](sources.json)、[LICENSES.md](LICENSES.md) 和
 [发布检查表](docs/release-checklist.md)。

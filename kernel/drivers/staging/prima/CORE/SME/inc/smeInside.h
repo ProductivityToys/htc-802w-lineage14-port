@@ -107,7 +107,6 @@ typedef struct sGenericQosCmd
     v_U8_t tspec_mask;
 } tGenericQosCmd;
 
-#ifdef WLAN_FEATURE_P2P
 typedef struct sRemainChlCmd
 {
     tANI_U8 chn;
@@ -121,7 +120,6 @@ typedef struct sNoACmd
 {
     tP2pPsConfig NoA;
 } tNoACmd;
-#endif
 #ifdef FEATURE_WLAN_TDLS
 typedef struct TdlsSendMgmtInfo
 {
@@ -136,7 +134,18 @@ typedef struct TdlsSendMgmtInfo
 
 typedef struct TdlsAddStaInfo
 {
+  eTdlsAddOper tdlsAddOper;
   tSirMacAddr peerMac;
+  tANI_U16  capability;
+  tANI_U8   extnCapability[SIR_MAC_MAX_EXTN_CAP];
+  tANI_U8   supportedRatesLen;
+  tANI_U8   supportedRates[SIR_MAC_MAX_SUPP_RATES];
+  tANI_U8    htcap_present;
+  tSirHTCap  HTCap;
+  tANI_U8    vhtcap_present;
+  tSirVHTCap VHTCap;
+  tANI_U8   uapsdQueues;
+  tANI_U8   maxSp;
 } tTdlsAddStaCmdInfo;
 
 typedef struct TdlsDelStaInfo
@@ -199,10 +208,8 @@ typedef struct tagSmeCmd
 #ifdef FEATURE_OEM_DATA_SUPPORT
         tOemDataCmd oemDataCmd;
 #endif
-#ifdef WLAN_FEATURE_P2P
         tRemainChlCmd remainChlCmd;
         tNoACmd NoACmd;
-#endif
         tAddStaForSessionCmd addStaSessionCmd;
         tDelStaForSessionCmd delStaSessionCmd;
 #ifdef FEATURE_WLAN_TDLS
@@ -287,12 +294,11 @@ tANI_BOOLEAN csrRoamGetConcurrencyConnectStatusForBmps(tpAniSirGlobal pMac);
 #ifdef FEATURE_WLAN_TDLS
 eHalStatus csrTdlsSendMgmtReq(tHalHandle hHal, tANI_U8 sessionId, tCsrTdlsSendMgmt *tdlsSendMgmt);
 eHalStatus csrTdlsAddPeerSta(tHalHandle hHal, tANI_U8 sessionId, tSirMacAddr peerMac);
+eHalStatus csrTdlsChangePeerSta(tHalHandle hHal, tANI_U8 sessionId, tSirMacAddr peerMac, tCsrStaParams *pstaParams);
 eHalStatus csrTdlsDelPeerSta(tHalHandle hHal, tANI_U8 sessionId, tSirMacAddr peerMac);
 eHalStatus csrTdlsProcessCmd(tpAniSirGlobal pMac,tSmeCmd *pCommand );
 eHalStatus tdlsMsgProcessor(tpAniSirGlobal pMac,v_U16_t msg_type,
                                                            void *pMsgBuf);
-eHalStatus csrTdlsOpen(tHalHandle hHal);
-tANI_BOOLEAN csrTdlsPowerSaveCheck( void* hHal );
 #ifdef FEATURE_WLAN_TDLS_INTERNAL
 eHalStatus csrTdlsDiscoveryReq(tHalHandle hHal, tANI_U8 sessionId,
                                           tCsrTdlsDisRequest *tdlsDisReq);
@@ -304,9 +310,10 @@ eHalStatus csrTdlsTeardownReq(tHalHandle hHal, tANI_U8 sessionId,
 #endif /* FEATURE_WLAN_TDLS */
 
 #if  defined (WLAN_FEATURE_VOWIFI_11R) || defined (FEATURE_WLAN_CCX) || defined(FEATURE_WLAN_LFR)
-eHalStatus csrFlushAndCreateBgScanRoamChannelList(tpAniSirGlobal pMac,
-                                                  const tANI_U8 *pChannelList,
-                                                  const tANI_U8 numChannels);
+eHalStatus csrFlushBgScanRoamChannelList(tpAniSirGlobal pMac);
+eHalStatus csrCreateBgScanRoamChannelList(tpAniSirGlobal pMac,
+                                            const tANI_U8 *pChannelList,
+                                            const tANI_U8 numChannels);
 eHalStatus csrUpdateBgScanConfigIniChannelList(tpAniSirGlobal pMac, eCsrBand eBand);
 eHalStatus csrInitCountryValidChannelList(tpAniSirGlobal pMac, tANI_U8 revision);
 void csr_SetRevision(tpAniSirGlobal pMac, tANI_U8 revision);

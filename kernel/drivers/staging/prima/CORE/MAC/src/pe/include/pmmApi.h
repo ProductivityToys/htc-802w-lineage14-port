@@ -70,18 +70,11 @@ extern void pmmResetStats(void *pvMac);
 /// Process the next PM message
 extern void pmmProcessMessage(tpAniSirGlobal, tpSirMsgQ);
 
-/// Process the PM message queue
-extern void pmmProcessMessageQueue(tpAniSirGlobal pMac);
-
 extern void pmmProcessPSPoll(tpAniSirGlobal, tANI_U8 *);
 extern void pmmUpdatePSPollState(tpAniSirGlobal);
 extern void pmmProcessRxActivity(tpAniSirGlobal, tANI_U16, tANI_U8);
 
-#ifdef WLAN_SOFTAP_FEATURE
 extern void pmmGenerateTIM(tpAniSirGlobal, tANI_U8 **, tANI_U16 *, tANI_U8);
-#else
-extern void pmmGenerateTIM(tpAniSirGlobal, tANI_U8 **, tANI_U16 *);
-#endif
 
 
 void pmmUpdateTIM(tpAniSirGlobal pMac, tpBeaconGenParams pBeaconGenParams);

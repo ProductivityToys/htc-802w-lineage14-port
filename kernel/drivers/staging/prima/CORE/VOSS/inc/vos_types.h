@@ -52,11 +52,22 @@
   \file  vos_Types.h
 
   \brief virtual Operating System Servies (vOS)
+<<<<<<< HEAD:CORE/VOSS/inc/vos_types.h
+               
+   Basic type definitions 
+  
+   Copyright 2008 (c) Qualcomm, Incorporated.  All Rights Reserved.
+   
+   Qualcomm Confidential and Proprietary.
+  
+=======
+
    Basic type definitions
 
    Copyright 2008 (c) Qualcomm, Incorporated.
    All Rights Reserved.
    Qualcomm Confidential and Proprietary.
+>>>>>>> b682f18... wlan: qnx awareness to corestack:prima/CORE/VOSS/inc/vos_types.h
   ========================================================================*/
 
 /* $Header$ */
@@ -127,35 +138,16 @@ typedef enum
 {
    VOS_MODULE_ID_BAP        = 0,
    VOS_MODULE_ID_TL         = 1,
-
-#ifndef FEATURE_WLAN_INTEGRATED_SOC
-   VOS_MODULE_ID_BAL        = 2,
-   VOS_MODULE_ID_SAL        = 3,
-   VOS_MODULE_ID_SSC        = 4,
-#endif
-
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
    VOS_MODULE_ID_WDI        = 2,
-#endif
-   
+   // 3 & 4 are unused for historical purposes
    VOS_MODULE_ID_HDD        = 5,
    VOS_MODULE_ID_SME        = 6,
    VOS_MODULE_ID_PE         = 7,
-
-#ifndef FEATURE_WLAN_INTEGRATED_SOC
-   VOS_MODULE_ID_HAL        = 8,
-#else
    VOS_MODULE_ID_WDA        = 8,
-#endif
-
    VOS_MODULE_ID_SYS        = 9,
    VOS_MODULE_ID_VOSS       = 10,
-#ifdef WLAN_SOFTAP_FEATURE
    VOS_MODULE_ID_SAP        = 11,
    VOS_MODULE_ID_HDD_SOFTAP = 12,
-#endif   
-
-
 
    // not a real module ID.  This is used to identify the maxiumum
    // number of VOS_MODULE_IDs and should always be at the END of
@@ -175,9 +167,8 @@ typedef enum
     VOS_P2P_CLIENT_MODE,
     VOS_P2P_GO_MODE,
     VOS_MONITOR_MODE,
-#ifdef ANI_MANF_DIAG
     VOS_FTM_MODE = 5,
-#endif
+    VOS_P2P_DEVICE,
     VOS_MAX_NO_OF_MODE
 
 } tVOS_CON_MODE;

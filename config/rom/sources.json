@@ -1,0 +1,19 @@
+{
+  "original_rom": {
+    "publisher": "Flyhalf205",
+    "url": "https://androidfilehost.com/?fid=673368273298925517",
+    "filename": "lineage-14.1-20170121-UNOFFICIAL-m7.zip",
+    "md5": "db369f61f537f04d8dd4d6c5fc6cf7f4"
+  },
+  "cfg_dat": {
+    "repository": "https://github.com/zcop/android_kernel_htc_m7c",
+    "commit": "67da107c62e9eabd2d9275b5cad7049262c35310",
+    "path": "drivers/staging/prima/firmware_bin/WCNSS_cfg.dat",
+    "sha256": "8bcd6656caa24d81acff4069d6db88b60a5a15b22e806da1bd473c1848070ecf"
+  },
+  "ini_template": {
+    "source": "tested original-model common settings; all interface/AP MAC values removed",
+    "sha256": "f4a4aaa617b392742f5b699ae2470d86ef6221e8070d1ce333e255afd42ab666"
+  },
+  "device_inputs": "Read own MAC from bootloader /proc/calibration; preserve own NV; copy and verify own p18 firmware; no factory blobs distributed"
+}

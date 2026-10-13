@@ -62,9 +62,8 @@
 #include <i_vos_packet.h>
 #include <vos_timer.h>
 #include <vos_trace.h>
-#ifdef WLAN_SOFTAP_FEATURE
 #include <wlan_hdd_main.h>   
-#endif
+#include <linux/wcnss_wlan.h>
 
 /*--------------------------------------------------------------------------
   Preprocessor definitions and constants
@@ -110,13 +109,11 @@ static VOS_STATUS vos_pkti_packet_init( struct vos_pkt_t *pPkt,
          vosStatus = VOS_STATUS_E_NOMEM;
       }
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
       /* Init PAL Packet */
       WPAL_PACKET_SET_BD_POINTER(&(pPkt->palPacket), NULL);
       WPAL_PACKET_SET_BD_PHYS(&(pPkt->palPacket), NULL);
       WPAL_PACKET_SET_BD_LENGTH(&(pPkt->palPacket), 0);
       WPAL_PACKET_SET_OS_STRUCT_POINTER(&(pPkt->palPacket), NULL);
-#endif
 
       break;
    default:
@@ -198,9 +195,9 @@ static void vos_pkti_replenish_raw_pool(void)
    mutex_lock(&gpVosPacketContext->mlock);
 
 
-   if ((gpVosPacketContext->rxReplenishListCount < VPKT_RX_REPLENISH_THRESHOLD)
-       &&
-       (!list_empty(&gpVosPacketContext->rxRawFreeList)))
+   if ((gpVosPacketContext->rxReplenishListCount <
+        gpVosPacketContext->numOfRxRawPackets/4) &&
+         (!list_empty(&gpVosPacketContext->rxRawFreeList)))
    {
       mutex_unlock(&gpVosPacketContext->mlock);
       return;
@@ -402,18 +399,18 @@ VOS_STATUS vos_packet_open( v_VOID_t *pVosContext,
       pVosPacketContext->rxRawFreeListCount = 0;
       INIT_LIST_HEAD(pFreeList);
 
+      pVosPacketContext->numOfRxRawPackets = vos_pkt_get_num_of_rx_raw_pkts();
+
       // fill the rxRaw free list
-      for (idx = 0; idx < VPKT_NUM_RX_RAW_PACKETS; idx++)
+      for (idx = 0; idx < pVosPacketContext->numOfRxRawPackets; idx++)
       {
          pPkt = &pVosPacketContext->vosPktBuffers[freePacketIndex++];
          vosStatus = vos_pkti_packet_init(pPkt, VOS_PKT_TYPE_RX_RAW);
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
          WPAL_PACKET_SET_METAINFO_POINTER(&(pPkt->palPacket),
                   (void*)&pVosPacketContext->rxMetaInfo[idx]);
          WPAL_PACKET_SET_TYPE(&(pPkt->palPacket), 
                               eWLAN_PAL_PKT_TYPE_RX_RAW);
-#endif
 
          if (VOS_STATUS_SUCCESS != vosStatus)
          {
@@ -440,12 +437,10 @@ VOS_STATUS vos_packet_open( v_VOID_t *pVosContext,
       {
          pPkt = &pVosPacketContext->vosPktBuffers[freePacketIndex++];
          vosStatus = vos_pkti_packet_init(pPkt, VOS_PKT_TYPE_TX_802_3_DATA);
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
          WPAL_PACKET_SET_METAINFO_POINTER(&(pPkt->palPacket),
                (void*)&pVosPacketContext->txDataMetaInfo[idx]);
          WPAL_PACKET_SET_TYPE(&(pPkt->palPacket), 
                               eWLAN_PAL_PKT_TYPE_TX_802_3_DATA);
-#endif
          if (VOS_STATUS_SUCCESS != vosStatus)
          {
             VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
@@ -453,9 +448,7 @@ VOS_STATUS vos_packet_open( v_VOID_t *pVosContext,
             break;
          }
          list_add_tail(&pPkt->node, pFreeList);
-#ifdef WLAN_SOFTAP_FEATURE
          pVosPacketContext->uctxDataFreeListCount++;
-#endif
       }
 
       // exit if any problems so far
@@ -476,12 +469,10 @@ VOS_STATUS vos_packet_open( v_VOID_t *pVosContext,
 
          vosStatus = vos_pkti_packet_init(pPkt, VOS_PKT_TYPE_TX_802_11_MGMT);
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
          WPAL_PACKET_SET_METAINFO_POINTER(&(pPkt->palPacket),
                (void*)&pVosPacketContext->txMgmtMetaInfo[idx]);
          WPAL_PACKET_SET_TYPE(&(pPkt->palPacket), 
                               eWLAN_PAL_PKT_TYPE_TX_802_11_MGMT);
-#endif
 
          if (VOS_STATUS_SUCCESS != vosStatus)
          {
@@ -556,9 +547,7 @@ VOS_STATUS vos_packet_close( v_PVOID_t pVosContext )
 
    mutex_unlock(&gpVosPacketContext->mlock);
 
-#ifdef WLAN_SOFTAP_FEATURE
    gpVosPacketContext->uctxDataFreeListCount = 0;
-#endif
 
    return VOS_STATUS_SUCCESS;
 }
@@ -887,7 +876,7 @@ VOS_STATUS vos_pkt_wrap_data_packet( vos_pkt_t **ppPacket,
    if (unlikely(VOS_PKT_TYPE_TX_802_3_DATA != pktType))
    {
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-                "VPKT [%d]: invalid pktType", __LINE__, pktType);
+                "VPKT [%d]: invalid pktType %d", __LINE__, pktType);
       return VOS_STATUS_E_INVAL;
    }
 
@@ -932,9 +921,7 @@ VOS_STATUS vos_pkt_wrap_data_packet( vos_pkt_t **ppPacket,
    // remove the first record from the free pool
    pVosPacket = list_first_entry(pPktFreeList, struct vos_pkt_t, node);
    list_del(&pVosPacket->node);
-#ifdef WLAN_SOFTAP_FEATURE
    gpVosPacketContext->uctxDataFreeListCount --;
-#endif
 
    // clear out the User Data pointers in the voss packet..
    memset(&pVosPacket->pvUserData, 0, sizeof(pVosPacket->pvUserData));
@@ -1352,9 +1339,7 @@ VOS_STATUS vos_pkt_return_packet( vos_pkt_t *pPacket )
       case VOS_PKT_TYPE_TX_802_3_DATA:
          pPktFreeList = &gpVosPacketContext->txDataFreeList;
          pLowResourceInfo = &gpVosPacketContext->txDataLowResourceInfo;
-#ifdef WLAN_SOFTAP_FEATURE
          gpVosPacketContext->uctxDataFreeListCount ++;
-#endif
          break;
 
       default:
@@ -2934,14 +2919,12 @@ VOS_STATUS vos_pkt_get_available_buffer_pool (VOS_PKT_TYPE  pktType,
 
    case VOS_PKT_TYPE_TX_802_11_DATA:
    case VOS_PKT_TYPE_TX_802_3_DATA:
-#ifdef WLAN_SOFTAP_FEATURE
       if (VOS_STA_SAP_MODE == hdd_get_conparam())
       {
          *vosFreeBuffer = gpVosPacketContext->uctxDataFreeListCount;  
           return VOS_STATUS_SUCCESS;
       }
       else
-#endif
       pList = &gpVosPacketContext->txDataFreeList;
       break;
 
@@ -2970,6 +2953,32 @@ VOS_STATUS vos_pkt_get_available_buffer_pool (VOS_PKT_TYPE  pktType,
    return VOS_STATUS_SUCCESS;
 }
 
+/**
+  @brief vos_pkt_get_num_of_rx_raw_pkts() - Get the number of RX packets
+                                       that should be allocated.
+
+  This function is called by VOS packet module to know how many RX raw
+  packets it should allocate/reserve. This value can be configured thru
+  Kernel device tree to save memory usage.
+
+  @param
+       NONE
+  @return
+       v_SIZE_t the number of packets to allocate
+
+*/
+v_SIZE_t vos_pkt_get_num_of_rx_raw_pkts(void)
+{
+#ifdef HAVE_WCNSS_RX_BUFF_COUNT
+    v_SIZE_t buffCount;
+
+    buffCount = wcnss_get_wlan_rx_buff_count();
+    return (buffCount > VPKT_NUM_RX_RAW_PACKETS ?
+               VPKT_NUM_RX_RAW_PACKETS : buffCount);
+#else
+    return VPKT_NUM_RX_RAW_PACKETS;
+#endif
+}
 
 #ifdef VOS_PACKET_UNIT_TEST
 #include "vos_packet_test.c"

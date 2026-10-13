@@ -50,14 +50,17 @@ adjustment. This kernel alone does not turn an arbitrary M7 ROM into an 802w ROM
 
 ## Release state
 
-This is a community source preview, not an official
-LineageOS release. The tested binary was built before this snapshot commit;
-freshly built binaries still need device validation. Camera error cleanup paths
-inherited from the reference board need review before a broader binary release.
-An unused diagnostic header is preserved to keep the working source snapshot
-complete; it is not included by the active WCNSS drivers.
+This is an unofficial ROM developer preview. The released kernel and corrected
+Prima module were validated together on one device; details and binary/source
+mapping are in docs/build-verification.json and the Release manifest. The
+v0.1.0-source tag accidentally retained experimental Prima 3.2.0.71. This
+revision supplies the actual reference 3.2.3.22 code and removes module debug
+information to stay below the bootstrap's 8 MiB limit.
 
-The root README is the user entry point. Releases in the same GitHub repository
-will contain source previews and future validated ROM downloads. Runtime CFG/INI
-are original upstream defaults; untraced experimental replacements are excluded.
-Kernel/module code and verified config are retained.
+Camera error cleanup paths inherited from the reference board still need
+review. The preview does not certify all hardware or long-term stability.
+An unused diagnostic header is retained; active WCNSS drivers do not include it.
+The root README and docs/rom-install.md are the user entry points. Source and
+ROM downloads share the repository's Releases. config/rom provides the tested
+common CFG and zero-address INI template; each receiving device supplies its
+own MAC, NV and original WCNSS firmware at installation.

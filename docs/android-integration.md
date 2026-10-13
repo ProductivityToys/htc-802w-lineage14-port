@@ -1,8 +1,9 @@
-# Android integration: remaining work before a public ROM
+# Android integration for the ROM developer preview
 
 The kernel is only one part of the tested system. The tested base is
 `lineage-14.1-20170121-UNOFFICIAL-m7.zip`; its complete Android build manifest
-and original distributor/provenance still need to be established. Do not claim
+is not available. The binary base was published by Flyhalf205; its original
+MD5 and download page are pinned in config/rom/sources.json. Do not claim
 that this project currently builds a full ROM from Android source.
 
 ## Required components
@@ -14,14 +15,17 @@ that this project currently builds a full ROM from Android source.
 | wcnss-init | ARM EABI legacy init_module bootstrap | source supplied here; compile with pinned GCC |
 | init trigger | post-fs-data exec runs /system/bin/wcnss-init as init/root | exact tested fragment in config/wcnss-bootstrap.rc; integrate once into the target init.rc |
 | file label / policy | wcnss-init labeled init_exec; init execute_no_trans | provide reviewed policy source / exact guarded transformation |
-| hardware_legacy | Broadcom firmware path redirected to /dev/null | provide guarded patch tool with input hash and exact bytes; provenance pending |
+| hardware_legacy | Broadcom firmware path redirected to /dev/null | guarded hash-pinned patch to the original base library |
 | WCNSS config | Prima CFG and INI | separate shared model settings from per-device MAC |
 | firmware / NV | original-device files | identify licenses and extraction sources; preserve each device's calibration |
 | camera HAL | existing M7 wrapper / proprietary camera stack | inventory source and binary provenance |
 
-The publication draft does not contain the original ROM, firmware, NV, HAL,
-patched library, ramdisk or tested boot image. Those inputs must be reviewed
-before being accepted as Release assets.
+The Git tree contains kernel/tooling/configuration source. Release assets
+contain the adapted public base system (including its existing vendor HAL),
+patched library, tested boot and matching module. Factory WCNSS firmware,
+NV, private ADB keys and personal data are not bundled. Full Android source
+reconstruction and comprehensive vendor licensing review remain unavailable;
+the original system notices are preserved.
 
 The boot was inspected directly: bootstrap is a blocking `exec` in
 `on post-fs-data`, not an independently running daemon. The fragment then sets
@@ -57,3 +61,12 @@ adb_keys, Wi-Fi passwords, app data, accounts or private recovery backups.
   instructions and test Recovery access.
 
 Replacing only boot on an arbitrary M7 installation is not a complete port.
+
+## ROM preview implementation
+
+The original base image and update-binary were confirmed byte-identical to the
+previous private integration. scripts/package_rom.py now repacks directly from
+the public, hash-pinned original base, not the private test42 package. It guards
+hardware and extracts the receiving device's own inputs before system writes.
+See rom-install.md. The Broadcom patch redirects the firmware_path sysfs
+parameter to /dev/null; it is not a replacement of only one STA firmware filename.

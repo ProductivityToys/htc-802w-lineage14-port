@@ -53,6 +53,8 @@ export LOCALVERSION="-g${port_revision}"
 export ARCH=arm CROSS_COMPILE=/toolchain/bin/arm-linux-androideabi-
 make -C /repository/kernel O=/output/kernel m7cdug_test44_defconfig
 make -C /repository/kernel O=/output/kernel -j"$1" zImage modules
+"${CROSS_COMPILE}strip" --strip-debug /output/kernel/drivers/staging/prima/wlan.ko
+test "$(stat -c %s /output/kernel/drivers/staging/prima/wlan.ko)" -lt 8388608
 "${CROSS_COMPILE}gcc" -marm -Os -fno-pic -fno-pie -fno-stack-protector \
   -nostdlib -nostartfiles -static -Wl,-e,_start -Wl,--build-id=none \
   /repository/src/wcnss-init.c -o /output/wcnss-init

@@ -105,12 +105,7 @@
 #define WLAN_FTM_PRIV_SET_NONE_GET_NONE   (SIOCIWFIRSTPRIV + 6)
 #define WE_SET_NV_DEFAULTS    1
 
-#define WLAN_FTM_PRIV_SET_VAR_INT_GET_NONE   (SIOCIWFIRSTPRIV + 7)
-#define WE_SET_RSSI_OFFSET 1
-
-
 #define WE_FTM_MAX_STR_LEN 1024
-#define MAX_FTM_VAR_ARGS  7
 
 #define MAX_NV_TABLE_SIZE  30000
 
@@ -171,14 +166,12 @@ typedef struct wlan_hdd_ftm_status_s
     v_BOOL_t  IsCmdPending;
     v_BOOL_t  cmd_iwpriv;
 
-#ifdef FEATURE_WLAN_INTEGRATED_SOC
     /** Large size of NV Table Handle **/
     eNvTable  processingNVTable;
     v_U32_t   targetNVTableSize;
     v_U8_t   *targetNVTablePointer;
     v_U32_t   processedNVTableSize;
     v_U8_t   *tempNVTableBuffer;
-#endif /* FEATURE_WLAN_INTEGRATED_SOC */
 
 } wlan_hdd_ftm_status_t;
 typedef struct ftm_msg_s
