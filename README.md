@@ -63,3 +63,8 @@ GitHub 自动生成的 `Source code` 附件是源码归档，不能用于刷机�
 
 内核按 GPLv2 及文件原许可提供；原创工具和文档采用 MIT。
 ROM 底包及 vendor 组件保留原许可，详见来源与许可文档。
+
+## Contributors
+
+- **zee**：项目维护、实机测试与发布。
+- **Codex（OpenAI）**：AI 辅助开发，参与移植排障、构建工具与文档整理。
