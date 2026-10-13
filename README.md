@@ -75,7 +75,7 @@ cache 为 p39，data 为 p40。刷机前备份自己的 boot 和原厂固件，�
 ## 来源与许可
 
 内核遵循 `kernel/COPYING`（GPLv2）及各文件原许可证；Prima 有文件级 ISC
-声明和 Dual BSD/GPL 模块声明。新增工具和原创说明使用 MIT。
+声明和 Dual BSD/GPL 模块声明。新增工具和原创说明使用 [MIT](LICENSES/MIT.txt)。
 本机原厂 WCNSS 固件、NV、HAL、账户、应用与备份均未导入。
 
 见 [sources.json](sources.json)、[LICENSES.md](LICENSES.md) 和

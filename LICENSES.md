@@ -4,7 +4,7 @@
   preserved. Prima has file-level ISC notices and declares Dual BSD/GPL as a
   module; consult each file rather than relabeling all code as MIT.
 - Toolkit original Python scripts, WCNSS bootstrap, Dockerfile and original
-  documentation: MIT, see LICENSE. WCNSS bootstrap was authored for this port.
+  documentation: MIT, see LICENSES/MIT.txt. WCNSS bootstrap was authored for this port.
 - Original Android ROM, hardware_legacy library, HTC / Qualcomm firmware and
   camera HAL: external inputs, not covered by this toolkit's MIT license and
   not included in this repository. Availability elsewhere does not establish
