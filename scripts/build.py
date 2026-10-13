@@ -43,6 +43,13 @@ cp /repository/.git/index /output/source-index
 export GIT_INDEX_FILE=/output/source-index
 # Refresh container stat data without writing the read-only source Git index.
 git -C /repository update-index --refresh
+# Linux 3.4 setlocalversion expects the kernel at the Git root. Our kernel/ is
+# nested, so supply the project revision explicitly without changing .config.
+port_revision="$(git -C /repository rev-parse --short=8 HEAD)"
+if ! git -C /repository diff-index --quiet HEAD --; then
+  port_revision="${port_revision}-dirty"
+fi
+export LOCALVERSION="-g${port_revision}"
 export ARCH=arm CROSS_COMPILE=/toolchain/bin/arm-linux-androideabi-
 make -C /repository/kernel O=/output/kernel m7cdug_test44_defconfig
 make -C /repository/kernel O=/output/kernel -j"$1" zImage modules
