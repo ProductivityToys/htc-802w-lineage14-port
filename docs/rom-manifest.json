@@ -1,0 +1,76 @@
+{
+  "release": "v0.2.0-rom-preview",
+  "repository": "https://github.com/ProductivityToys/htc-802w-lineage14-port",
+  "corresponding_source_commit": "a5dc01672835da31d2d6b255afcbcc01d41c76a2",
+  "source_tag": "v0.2.0-rom-preview",
+  "kernel_build_commit": "a7e2dd2198015000d8fc2f42ab57fd9096dc7757",
+  "kernel_release": "3.4.113-ga7e2dd21",
+  "module_source": {
+    "repository": "https://github.com/zcop/android_kernel_htc_m7c",
+    "commit": "67da107c62e9eabd2d9275b5cad7049262c35310",
+    "path": "drivers/staging/prima",
+    "version": "3.2.3.22",
+    "local_patch": "Kbuild -fno-pic -fno-pie; strip-debug after module build"
+  },
+  "module_build": "Corrected reference driver built against the existing kernel config/generated outputs with LOCALVERSION=-ga7e2dd21; stripped debug info. No binary vermagic edit. Corresponding corrected source is supplied by this tag.",
+  "toolchain_commit": "0390252b6bcc6217966ade31d07f8b12f6f78f89",
+  "base": {
+    "publisher": "Flyhalf205",
+    "url": "https://androidfilehost.com/?fid=673368273298925517",
+    "filename": "lineage-14.1-20170121-UNOFFICIAL-m7.zip",
+    "md5": "db369f61f537f04d8dd4d6c5fc6cf7f4"
+  },
+  "device": "HTC 802w / m7cdug only, MID PN0771000",
+  "signature": "unsigned developer preview",
+  "identity": "Installer reads receiving-device MAC from /proc/calibration, preserves own NV and verifies/copies own p18 firmware; no factory firmware/NV/ADB keys bundled",
+  "validation": {
+    "clean_data_cache_install": true,
+    "final_zip_installed": true,
+    "boot_completed": true,
+    "wifi_association_DHCP_gateway": true,
+    "wifi_reconnect_after_reboot": true,
+    "SELinux": "Enforcing",
+    "camera_devices": 2,
+    "front_rear_JPEG_saved": true,
+    "module_source_version": "3.2.3.22",
+    "module_size_bytes": 2826488,
+    "private_firmware_NV_keys_bundled": false,
+    "ROM_SHA256": "5bbeef87d067666d1de6df6baddde7c8bf95b27a4c65b574841e3746cb9d3023",
+    "scope": "One HTC 802w; baseline after clean wipe plus final package reinstall; private network/auth files used only for testing"
+  },
+  "not_validated": [
+    "audio playback",
+    "Bluetooth pairing",
+    "SIM/calls/dual SIM",
+    "video recording",
+    "long-term standby/stability",
+    "other M7 variants"
+  ],
+  "limitations": [
+    "Adapted 2017 public Android base; not a full Android source build or updated security patch release",
+    "Complete Android build manifest, ramdisk policy generation and comprehensive vendor licensing inventory not established",
+    "Camera power-sequence error cleanup remains to be reviewed",
+    "Optional runtime debloat and Google installation are not bundled in the ROM"
+  ],
+  "artifacts": {
+    "INSTALL.md": {
+      "bytes": 8959,
+      "sha256": "6d18ffa3b878d706e1b03b8cf99c3765cb5959fa66280b46e44e432f80f4d634"
+    },
+    "lineage-14.1-20261013-UNOFFICIAL-m7cdug-preview.zip": {
+      "bytes": 382112486,
+      "sha256": "5bbeef87d067666d1de6df6baddde7c8bf95b27a4c65b574841e3746cb9d3023"
+    }
+  },
+  "release_layout": "ROM ZIP, Chinese INSTALL.md, ROM-only SHA256SUMS; boot/module are inside the ZIP; technical manifest moved to repository docs",
+  "embedded_artifacts": {
+    "boot.img": {
+      "zip_path": "boot.img",
+      "sha256": "938ae5a0eaaf2bf97a7fa1a75df45ac6b9ecfaa095c575bb4df6a01441631d3f"
+    },
+    "wlan.ko": {
+      "zip_path": "m7c-overrides/lib/modules/wlan.ko",
+      "sha256": "742bcdf472431cb7b3490a8bb27d25cf30ad7eeef1818c0af81b6de7a4df2f8d"
+    }
+  }
+}

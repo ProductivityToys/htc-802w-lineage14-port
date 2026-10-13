@@ -20,12 +20,25 @@ S-ON、TWRP 3.0.2-0。802d、802t、国际单卡 M7 未验证。企业微信是�
 
 ## 下载入口
 
-**源码与可安装 ROM 都放在本仓库的 [Releases](https://github.com/ProductivityToys/htc-802w-lineage14-port/releases)。**
+**[下载 v0.2.0 ROM](https://github.com/ProductivityToys/htc-802w-lineage14-port/releases/tag/v0.2.0-rom-preview) · [中文刷机指南](docs/rom-install.md)**
 
-当前 ROM 预览版 v0.2.0-rom-preview 提供可安装 ZIP、匹配 boot 与校验文件。
-使用每台手机自身的 MAC/NV/无线固件，不分发本机配置。[刷机说明](docs/rom-install.md)。
-已从清空 data/cache 的状态验证启动，并复验最终 ZIP、Wi-Fi 重连和前后摄。
-Google 服务停用等精简仍属于运行时设置，未作为 Lite ROM 打包。
+普通刷机下载 **ROM ZIP** 和 **SHA256SUMS** 即可；`INSTALL.md` 是中文指南的
+离线副本。boot、Wi-Fi 模块已内置于 ZIP，不用分开刷。GitHub 的
+`Source code` 附件是开发者源码，不是刷机包。
+
+### 安装流程
+
+1. 确认是已解锁的 **802w / m7cdug**，并安装了专用 TWRP 3.0.2-0。
+2. 校验 ROM，在 TWRP 备份 Boot/System/Data/Cache，并把备份复制到电脑。
+3. 在 Mount 取消 System 只读；把 ROM ZIP 复制到手机内部存储。
+4. 在 Wipe 使用默认 Factory Reset 清理 Data/Cache。**不要擦除 System 或内部存储**。
+5. 在 Install 选择 ROM ZIP，关闭 ZIP 签名验证，滑动安装。
+6. 成功后 Reboot System；首次启动实测约两分钟，再检查触控、Wi-Fi 和前后摄。
+
+完整按键、菜单、命令和失败恢复方法见 [中文刷机指南](docs/rom-install.md)。
+安装器使用每台手机自身的 MAC/NV/无线固件；原厂 NV/p18 固件必须保留。
+已在清空 data/cache 的基线上验证，并复验最终 ZIP 和 Wi-Fi 重连。
+运行时精简设置未作为 Lite ROM 打包，Google 服务也未包含在 ROM 中。
 
 **首版源码更正：v0.1.0-source 误保留早期 Prima 3.2.0.71 实验驱动。**
 当前源码已补齐成功基线实际使用的参考 Prima 3.2.3.22，并增加模块调试信息

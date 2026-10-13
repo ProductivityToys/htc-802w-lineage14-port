@@ -70,3 +70,31 @@ the public, hash-pinned original base, not the private test42 package. It guards
 hardware and extracts the receiving device's own inputs before system writes.
 See rom-install.md. The Broadcom patch redirects the firmware_path sysfs
 parameter to /dev/null; it is not a replacement of only one STA firmware filename.
+
+## Repack / audit
+
+
+`scripts/extract_base_system.py` reconstructs a sparse raw ext4 image from the
+pinned base ZIP. Use read-only `debugfs` to dump its original library:
+
+```bash
+python3 scripts/extract_base_system.py original-base.zip original-system.raw.img
+debugfs -R 'dump -p /lib/libhardware_legacy.so libhardware_legacy.original.so' original-system.raw.img
+```
+
+`scripts/package_rom.py` validates the base MD5, original library SHA, exact
+Broadcom-path transformation, boot kernel hash, same-build module/helper and
+zero-address INI template. Supply the patched/verified boot ramdisk seed and
+matching build outputs; recompiling kernel/modules requires repacking boot
+with that same kernel. The tested boot's policy changes are documented in
+`docs/android-integration.md`, and the kernel's complete source remains available.
+
+```bash
+python3 scripts/package_rom.py --base original-base.zip --boot matched-boot.img \
+  --build-dir matched-build --legacy-lib libhardware_legacy.original.so \
+  --output lineage-14.1-UNOFFICIAL-m7cdug-preview.zip
+```
+
+The system block data remain byte-identical to the declared public base. Only
+declared overlays, boot and guarded installer logic are added. No live phone
+system dump is used as the ROM source.
